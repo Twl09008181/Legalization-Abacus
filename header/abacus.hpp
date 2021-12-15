@@ -7,8 +7,8 @@
 #include <algorithm>
 
 struct node{
-	node(int y,int x)
-		:origin_y{y},origin_x{x}{}
+	node(int x,int y,int w = -1,int h = -1 )
+		:origin_y{y},origin_x{x},width{w},height{h}{}
 	void setShape(int w,int h){
 		width = w;
 		height = h;
@@ -27,9 +27,9 @@ struct subrow{
 
 using fixed_node = node;
 struct row{
-	row(int coordinate,int x,int width,int h)
+	row(int x,int coordinate,int w,int h)
 		:y{coordinate},height{h}{
-		subrows.push_back({x,x + width});
+		subrows.push_back({x,w});
 	}
 	int y;
 	int height;

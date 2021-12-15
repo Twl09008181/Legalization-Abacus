@@ -8,27 +8,20 @@
 int main()
 {
 
-	row row1{18,0,13};
+	row row1{18,18,18,4};//x = 18, y = 18, width = 18, height = 4
+	std::cout<<row1.subrows.rbegin()->x2<<"\n";
 
 
-	std::vector<fixed_node>terminals; 
+	fixed_node t1{17,0,5,30}; // x = 19~22 , y = 5~35 
 
-	terminals.push_back(fixed_node{18,3});
-	terminals.push_back(fixed_node{18,12});
-	row1.block(terminals,0,2);
+	row1.block(t1);
 
-	for(auto & sub:row1.subrows)
+	for(auto sub:row1.subrows)
 	{
 		std::cout<<sub.x1<<" "<<sub.x2<<"\n";
 	}
 
 	
-	node n{18,6};
-	n.setShape(2,4);
-
-	subrow* sub = row1.getSub(&n);
-
-	std::cout<<sub->x1<<" "<<sub->x2<<"\n";
 
 
 	return 0;
