@@ -6,31 +6,39 @@
 #include<list>
 #include <algorithm>
 
-struct nodes{
-	nodes(int y,int x,int w)
-		:origin_y{y},origin_x{x},width{w}{}
+struct node{
+	node(int y,int x)
+		:origin_y{y},origin_x{x}{}
+	void setShape(int w,int h){
+		width = w;
+		height = h;
+	}
 	int origin_x,origin_y;//global placement result
 	int width;
+	int height;
 };
 struct subrow{
 	subrow(int startx,int width)
 		: x1{startx},x2{startx + width}{remainSpace = x2-x1;}
-	std::list<nodes*>nodes;
+	std::list<node*>nodes;
 	int x1,x2;
 	int remainSpace;
 };
 
-using fixed_nodes = nodes;
+using fixed_node = node;
 struct row{
-	row(int coordinate,int x,int width)
-		:y{coordinate}{
+	row(int coordinate,int x,int width,int h)
+		:y{coordinate},height{h}{
 		subrows.push_back({x,x + width});
 	}
 	int y;
+	int height;
 	std::list<subrow> subrows;
-	//need sorted by y and sort by x(same y).
-	void block(std::vector<fixed_nodes>&fixed,int i,int j);
+	//need sorted by x.
+	void block(fixed_node&terminal);
+	subrow* getSub(node*n);
 };
 
+void placeTerminal();
 
 #endif
