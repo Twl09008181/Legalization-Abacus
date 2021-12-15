@@ -33,7 +33,6 @@ void row::block(fixed_node &terminal){
     else if(condition==4)
         last.x2 = t_x1;
     if(condition > 1) last.remainSpace = last.x2 - last.x1;
-    std::cout<<"condition:"<<condition<<"\n";
 }
 subrow* row::getSub(node*n){
     auto ptr = subrows.begin();
