@@ -6,12 +6,15 @@
 // user need to check the row y range is covered by this terminal node.
 void row::block(fixed_node &terminal){
     //pre-checking y range
+
     if(terminal.origin_y + terminal.height <= y  || terminal.origin_y >= y + height){
-        std::cerr<<"row::block error , error terminal y range !\n";
-        std::cerr<<"row range: "<< y <<" to "<< y + height<<"\n";
-        std::cerr<<"terminal range: "<< terminal.origin_y << " "<<terminal.origin_y + terminal.height<< "\n";
-        exit(1);
+       //std::cerr<<"row::block error , error terminal y range !\n";
+       //std::cerr<<"row range: "<< y <<" to "<< y + height<<"\n";
+       //std::cerr<<"terminal range: "<< terminal.origin_y << " "<<terminal.origin_y + terminal.height<< "\n";
+        //exit(1);
+        return ;
     }
+
     subrow& last = *subrows.rbegin();       
     
     int condition;//overlap condition
