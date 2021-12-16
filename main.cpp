@@ -8,6 +8,8 @@
 int main()
 {
 
+
+	/*
 	// x range : (0,30)	
 	// row height = 4 
 	int rowH = 4;
@@ -41,8 +43,41 @@ int main()
 		}
 		std::cout<<"\n";
 	}
+	*/
+
+
+	int height = 10;
+	subrow row1{30,40};//30 ~ 70
+
+	//first prepare total width = 30 to pack.
+	node n1{0,0,5,height};//adjust to 30~35
+	node n2{15,0,5,height};//adjust to 35~40
+	node n3{35,0,10,height};//adjust to 40~50
+	node n4{55,0,5,height};// same : 55~60
+	node n5{80,0,5,height};//adjust to 65~70
+
+	std::vector<node>nodes;
+	nodes.push_back(n1);
+	nodes.push_back(n2);
+	nodes.push_back(n3);
+	nodes.push_back(n4);
+	nodes.push_back(n5);
+
+	for(auto &n:nodes)
+		row1.insert(&n);
+	row1.placeRow();
 
 	
+	for(auto &n:nodes)
+		std::cout<<n.x<<" "<<n.x+n.width<<"\n";
+
+	node n6{90,0,10,height};//packed from behind. n4,n5 need be pushed front 10 width.
+	row1.insert(&n6);
+	row1.placeRow();	
+
+	for(auto &n:nodes)
+		std::cout<<n.x<<" "<<n.x+n.width<<"\n";
+	std::cout<<n6.x<<" "<<n6.x+n6.width<<"\n";
 
 
 	return 0;

@@ -37,8 +37,8 @@ struct cluster{
     int ec; // ec <- ec + e(i)
     int qc; // qc <- qc +e(i)[x'(i) -wc ]
     int wc; // wc <- wc + w(i)
-    cluster(int x)
-        :xc{x},ec{0},qc{0},wc{0}{}
+    cluster(int x,cluster*pred)
+        :xc{x},ec{0},qc{0},wc{0},predecessor{pred}{}
     // if overlap with predecessor cluster, then do cluster.
     cluster * predecessor;
     // nodes for caculate each position x
@@ -86,62 +86,87 @@ int modify_x(int x1,int x2,node*n){
     return n->origin_x;
 }
 
-int subrow::placeRow(node*n){
-    cluster* lastC = nullptr;
-    if(!nodes.empty()){ //processing the already placed nodes.
-        auto ptr = nodes.begin();
-        lastC = new cluster(modify_x(x1,x2,*ptr));
-        lastC->AddCell(n);
-        for(++ptr;ptr!=nodes.end();++ptr){
-            int m_x = modify_x(x1,x2,*ptr);
-            if(lastC->xc + lastC->wc <= m_x){
-                lastC = new cluster(m_x);
-                lastC->AddCell(n);
-            }
-            else{
-                lastC->AddCell(n);
-                Collapse(lastC,x1,x2);
-            }
-        }
-    }
-    if(n)
-    {
 
+cluster* place(cluster*lastC,node *n,subrow*r)
+{
+    int m_x = modify_x(r->x1,r->x2,n);
+    //look ahead.
+    if(!lastC || lastC->xc + lastC->wc <= m_x){
+        lastC = new cluster(m_x,lastC);
+        lastC->AddCell(n);
+        std::cout<<"create cluster, xc:"<<lastC->xc<<" width:"<<lastC->wc<<"\n";
     }
-    //caculate position
-    while(lastC)
-    {
+    else{
+        lastC->AddCell(n);
+        lastC = Collapse(lastC,r->x1,r->x2);
+        std::cout<<"collapse cluster, xc:"<<lastC->xc<<" width:"<<lastC->wc<<"\n";
+    }
+    return lastC;
+}
+
+int getPos(cluster*lastC){
+    int cost = 0;
+    while(lastC){
+        int x = lastC->xc;
+        for(node* n:lastC->nodes){
+            n->x = x;
+            cost += n->weight * (n->x - n->origin_x) * (n->x - n->origin_x);
+            x += n->width;
+        }
+        lastC = lastC->predecessor;
+    }
+    return cost;//total cost
+}
+
+std::pair<int,int> subrow::placeRow(node*n){
+    cluster* lastC = nullptr;
+    for(auto ptr = nodes.begin();ptr!=nodes.end();++ptr)
+        lastC = place(lastC,*ptr,this);
+    
+    //caculate position and cost.
+    int cost1 = getPos(lastC);
+    int cost2 = cost1;
+    if(n){
+        lastC = place(lastC,n,this);
+        cost2 = getPos(lastC);
+    }
+    //memory free.
+    while(lastC){
         cluster*tmp = lastC;
         lastC = lastC->predecessor;
         delete tmp;
     }
+    return {cost1,cost2};
 }
 
 //first : optimal subrow to place n
 //second : delta_cost
 std::pair<subrow*,int> row::placeRow(node* n){
-    subrow* place = nullptr;
+    subrow* p = nullptr;//find a subrow to place p.
     int bestCost = INT_MAX;
     for(auto &sub:subrows){
-        if(sub.remainSpace >= n->width){
-            int cost = sub.placeRow(n);
-            if(cost < bestCost){
-                place = &sub;
-                bestCost = cost;
+        if(sub.remainSpace >= n->width){//still have space
+            auto cost = sub.placeRow(n);
+            int deltaCost = cost.second - cost.first;
+            if(deltaCost < bestCost){
+                p = &sub;
+                bestCost = deltaCost;
             }
-            else if (cost >= bestCost){ // already find optimal  
+            else if (deltaCost >= bestCost){ // already find optimal  
                 break;
             }
         }
     }
-    return {place,bestCost};
+    return {p,bestCost};
 }
-void row::updatePos()
+int row::getCost()
 {
+    int cost = 0;
     for(auto &sub:subrows)
-        sub.placeRow();
+        cost += sub.placeRow().first;
+    return cost;
 }
-void abacus(std::vector<node>&nodes,std::vector<row>&rows){
+int abacus(std::vector<node>&nodes,std::vector<row>&rows){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node&n1,node&n2){return n1.origin_x < n2.origin_x;});
     for(auto &n : nodes){
@@ -162,6 +187,8 @@ void abacus(std::vector<node>&nodes,std::vector<row>&rows){
         }
     }
     //updating coordinate
-   for(auto &r:rows)
-        r.updatePos();
+    int cost = 0;
+    for(auto &r:rows)
+        cost+=r.getCost();
+    return cost;
 }

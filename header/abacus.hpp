@@ -18,6 +18,7 @@ struct node{
 	int width;
 	int height;
 	int weight = 1;
+	int x,y;
 };
 struct subrow{
 	subrow(int startx,int width)
@@ -31,7 +32,7 @@ struct subrow{
 			exit(1);
 		}
 	}
-	int placeRow(node*n=nullptr);
+	std::pair<int,int> placeRow(node*n=nullptr);
 	std::list<node*>nodes;
 	int x1,x2;
 	int remainSpace;
@@ -49,11 +50,11 @@ struct row{
 	//need sorted by x.
 	void block(fixed_node&terminal);
 	std::pair<subrow*,int> placeRow(node* n);
-	void updatePos();
+	int getCost();
 };
 
 void placeTerminal(std::vector<fixed_node>&terminals,std::vector<row>&rows);
 
-void abacus(std::vector<node>&nodes,std::vector<row>&rows);
+int abacus(std::vector<node>&nodes,std::vector<row>&rows);
 
 #endif
