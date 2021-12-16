@@ -67,6 +67,7 @@ int main()
 		row1.insert(&n);
 	row1.placeRow();
 
+	std::cout<<"remain:"<<row1.remainSpace<<"\n";
 	
 	for(auto &n:nodes)
 		std::cout<<n.x<<" "<<n.x+n.width<<"\n";
@@ -78,6 +79,8 @@ int main()
 	for(auto &n:nodes)
 		std::cout<<n.x<<" "<<n.x+n.width<<"\n";
 	std::cout<<n6.x<<" "<<n6.x+n6.width<<"\n";
+
+	std::cout<<"remain:"<<row1.remainSpace<<"\n";
 
 
 	return 0;
