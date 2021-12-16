@@ -8,7 +8,7 @@
 int main()
 {
 
-	// x range : (0,32)	
+	// x range : (0,30)	
 	// row height = 4 
 	int rowH = 4;
 	int rowW = 30;
