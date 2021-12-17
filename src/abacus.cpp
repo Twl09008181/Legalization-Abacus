@@ -198,32 +198,81 @@ std::vector<node*> row::RipUp(int threshold){
         for(auto c:subCand)
             candidate.push_back(c);
     }
+    std::sort(candidate.begin(),candidate.end(),[](node*n1,node*n2){return n1->x < n2->x;});
     return candidate;
 }
 
-int abacus(std::vector<node>&nodes,std::vector<row>&rows){
+
+std::vector<node*>Refine(std::vector<node*>&nodes,row&r){
+	std::vector<node*>failed;
+	for(auto n:nodes){
+		auto result = r.placeRow(n);
+		if(result.first==nullptr){
+			failed.push_back(n);
+		}
+		else{
+			result.first->insert(n);//place
+            n->y = r.y;
+        }
+	}
+	std::sort(failed.begin(),failed.end(),[](node* n1,node*n2){return n1->width > n2->width;});
+	return failed;
+}
+bool RefinementPlace(std::vector<node*>&notDone,std::vector<row>&rows){
+    std::sort(notDone.begin(),notDone.end(),[](node*n1,node*n2){return n1->width > n2->width;});
+    for(int i = 0;i < rows.size() && !notDone.empty();i++)
+    {
+        auto ripup = rows.at(i).RipUp((*notDone.begin())->width);
+        notDone = Refine(notDone,rows.at(i));
+        auto notDone2 = Refine(ripup,rows.at(i));
+        for(auto n:notDone2)
+            notDone.push_back(n);
+    }
+    return notDone.empty();
+}
+
+int abacus(std::vector<node*>nodes,std::vector<row>&rows){
     //sort by x
-    std::sort(nodes.begin(),nodes.end(),[](node&n1,node&n2){return n1.origin_x < n2.origin_x;});
-    for(auto &n : nodes){
+    std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
+        if(n1->origin_x==n2->origin_x)
+            return n1->width > n2->width; // wider first
+        return n1->origin_x < n2->origin_x;
+        }
+    );
+
+    std::vector<node*>notDone;notDone.reserve(nodes.size()/10);
+    for(auto n : nodes){
         int bestCost = INT_MAX;
         subrow* bestplace = nullptr;
+        row* bestRow = nullptr;
         for(auto &r:rows){
-            auto place = r.placeRow(&n);
+            auto place = r.placeRow(n);
             if(place.first && place.second < bestCost){
                 bestCost = place.second;
                 bestplace = place.first;
+                bestRow = &r;
             }
         }
-        if(bestplace)
-            bestplace->insert(&n);
+        if(bestplace){
+            bestplace->insert(n);
+            n->y = bestRow->y;
+        }
         else{
-            std::cout<<"abacus failed\n";
-            exit(1);
+            notDone.push_back(n);
         }
     }
-    //updating coordinate
-    int cost = 0;
-    for(auto &r:rows)
-        cost+=r.getCost();
-    return cost;
+    bool done = true;
+    if(!notDone.empty()){
+        std::cout<<"do refine\n";
+        done = RefinementPlace(notDone,rows);
+    }
+
+    if(done){ 
+        //updating coordinate and return cost
+        int cost = 0;
+        for(auto &r:rows)
+            cost+=r.getCost();
+        return cost;
+    }
+    return -1;
 }

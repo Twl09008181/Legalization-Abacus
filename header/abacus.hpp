@@ -57,6 +57,6 @@ struct row{
 };
 
 void placeTerminal(std::vector<fixed_node>&terminals,std::vector<row>&rows);
-int abacus(std::vector<node>&nodes,std::vector<row>&rows);
+int abacus(std::vector<node*>nodes,std::vector<row>&rows);
 
 #endif

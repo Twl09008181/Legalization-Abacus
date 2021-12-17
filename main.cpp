@@ -6,7 +6,6 @@
 
 
 
-std::vector<node*>pack(std::vector<node*>&nodes,row&r);
 
 int main()
 {
@@ -22,7 +21,8 @@ int main()
 	row row2{0,10,rowW,rowH};
 	row row3{0,14,rowW,rowH};
 	
-	std::vector<row*>rows{&row0,&row1,&row2,&row3};
+	//std::vector<row>rows{row0,row1,row2,row3};
+	std::vector<row>rows{row0};
 
 	fixed_node t0{12,2,4,12}; //x = 12 ~ 16 , y = 2 ~ 14
 	fixed_node t1{18,4,2,8};  //x = 18 ~ 20 , y = 4 ~ 12 
@@ -37,8 +37,8 @@ int main()
 	);
 	
 	for(auto t : terminals){
-		for(auto r:rows)
-			r->block(*t);
+		for(auto &r:rows)
+			r.block(*t);
 	}
 	/*
 	for(auto r:rows){
@@ -62,54 +62,21 @@ int main()
 	nodes.push_back(&n4);
 	nodes.push_back(&n5);
 
-	std::cout<<"row0 remain:"<<row0.getRemain()<<"\n";
-	std::vector<node*>unpacked = pack(nodes,row0);
 
-	if(unpacked.empty())
-	for(auto n:nodes)
-		std::cout<<n->x<<" "<<n->x+n->width<<"\n";
-	else{
-		std::cout<<"placed failed--------------- !!\n";
-		for(auto n:unpacked)
-			std::cout<<"width: "<<n->width<<"\n";
-	}
-
-	while(!unpacked.empty())
+	int cost = abacus(nodes,rows);
+	if(cost!=-1)
 	{
-		auto ripup = row0.RipUp((*unpacked.begin())->width);
-		unpacked = pack(unpacked,row0);
-		if(!unpacked.empty())
-		{
-			std::cout<<"final :can't place!\n";
-			for(auto un:unpacked)
-				std::cout<<un->width<<"\n";
-			break;
+		std::cout<<"total cost:"<<cost<<"\n";
+		for(auto n:nodes){
+			std::cout<<"pos : "<<n->x<<" "<<n->y<<" ";
+			std::cout<<"shape:"<<n->width<<" "<<n->height<<"\n";
 		}
-		unpacked = pack(ripup,row0);
 	}
-
-	if(unpacked.empty()){
-		std::cout<<"cost :"<<row0.getCost()<<"\n";
-		for(auto n:nodes)
-			std::cout<<n->x<<" "<<n->x+n->width<<"\n";
+	else{
+		std::cout<<"abacus failed\n";
 	}
-
 
 
 
 	return 0;
-}
-
-std::vector<node*>pack(std::vector<node*>&nodes,row&r){
-	std::vector<node*>unpacked;
-	for(auto n:nodes){
-		auto result = r.placeRow(n);
-		if(result.first==nullptr){
-			unpacked.push_back(n);
-		}
-		else
-			result.first->insert(n);//place
-	}
-	std::sort(unpacked.begin(),unpacked.end(),[](node* n1,node*n2){return n1->width > n2->width;});
-	return unpacked;
 }
