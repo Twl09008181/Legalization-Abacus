@@ -220,7 +220,7 @@ std::vector<node*>Refine(std::vector<node*>&nodes,row&r){
 }
 bool RefinementPlace(std::vector<node*>&notDone,std::vector<row>&rows){
     std::sort(notDone.begin(),notDone.end(),[](node*n1,node*n2){return n1->width > n2->width;});
-    for(int round = 0;round<2;round++)
+    for(int round = 0;round<10;round++)
     for(int i = 0;i < rows.size() && !notDone.empty();i++)
     {
         auto ripup = rows.at(i).RipUp((*notDone.begin())->width);

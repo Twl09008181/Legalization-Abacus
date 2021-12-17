@@ -17,7 +17,7 @@ def drawLayout(ax,block,fill,text,color,linewidth):
         x1,x2,y1,y2 = block[i]
         ax.add_patch(Rectangle((x1,y1),x2-x1,y2-y1,edgecolor=color,color=color,fill=fill,linewidth=linewidth))
         if text:
-            ax.text(floor(x1+x2)/2,floor(y1+y2)/2,i,size=5)
+            ax.text(floor(x1+x2)/2,floor(y1+y2)/2,i)
         if(x2 > max_x):
             max_x = x2
         if(y2 > max_y):
@@ -55,7 +55,7 @@ layout.close()
 
 
 fig, ax = plt.subplots()
-drawLayout(ax,Rows,False,False,"black",1)
+drawLayout(ax,Rows,False,False,"black",3)
 drawLayout(ax,terminals,True,False,"red",1)
 drawLayout(ax,nodes,False,True,"green",1)
 

@@ -63,6 +63,15 @@ int main()
 	node n11{5,0,4,rowH};
 	node n12{5,0,4,rowH};
 	node n13{5,0,4,rowH};
+	node n14{5,0,2,rowH};
+	node n15{5,0,2,rowH};
+	node n16{5,0,2,rowH};
+	node n17{5,0,2,rowH};
+	node n18{5,0,2,rowH};
+	node n19{5,0,2,rowH};
+	node n20{5,0,2,rowH};
+	node n21{5,0,1,rowH};
+	node n22{5,0,1,rowH};
 
 	std::vector<node*>nodes;
 	nodes.push_back(&n1);
@@ -78,6 +87,15 @@ int main()
 	nodes.push_back(&n11);
 	nodes.push_back(&n12);
 	nodes.push_back(&n13);
+	nodes.push_back(&n14);
+	nodes.push_back(&n15);
+	nodes.push_back(&n16);
+	nodes.push_back(&n17);
+	nodes.push_back(&n18);
+	nodes.push_back(&n19);
+	nodes.push_back(&n20);
+	nodes.push_back(&n21);
+	nodes.push_back(&n22);
 
 
 	int cost = abacus(nodes,rows);
