@@ -21,8 +21,8 @@ int main()
 	row row2{0,10,rowW,rowH};
 	row row3{0,14,rowW,rowH};
 	
-	//std::vector<row>rows{row0,row1,row2,row3};
-	std::vector<row>rows{row0};
+	std::vector<row>rows{row0,row1,row2,row3};
+	//std::vector<row>rows{row0};
 
 	fixed_node t0{12,2,4,12}; //x = 12 ~ 16 , y = 2 ~ 14
 	fixed_node t1{18,4,2,8};  //x = 18 ~ 20 , y = 4 ~ 12 
@@ -54,6 +54,14 @@ int main()
 	node n3{10,0,2,rowH};
 	node n4{40,0,2,rowH};//can't place !! 
 	node n5{41,0,1,rowH};
+	node n6{100,0,22,rowH};
+	node n7{15,0,4,rowH};
+	node n8{31,0,4,rowH};
+	node n9{11,0,4,rowH};
+	node n10{0,0,4,rowH};
+	node n11{5,0,4,rowH};
+	node n12{5,0,4,rowH};
+	node n13{5,0,4,rowH};
 
 	std::vector<node*>nodes;
 	nodes.push_back(&n1);
@@ -61,6 +69,14 @@ int main()
 	nodes.push_back(&n3);
 	nodes.push_back(&n4);
 	nodes.push_back(&n5);
+	nodes.push_back(&n6);
+	nodes.push_back(&n7);
+	nodes.push_back(&n8);
+	nodes.push_back(&n9);
+	nodes.push_back(&n10);
+	nodes.push_back(&n11);
+	nodes.push_back(&n12);
+	nodes.push_back(&n13);
 
 
 	int cost = abacus(nodes,rows);
