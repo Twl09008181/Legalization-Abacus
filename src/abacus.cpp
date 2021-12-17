@@ -182,8 +182,9 @@ std::pair<subrow*,int> row::placeRow(node* n){
     int start = BsSub(subrows,n);
     for(int i = start-1;i<=start+1;i++){
         if(i>=0&&i<subrows.size())
-            if(!tryPlace(subrows.at(i),n,bestCost,p))break;
+            tryPlace(subrows.at(i),n,bestCost,p);
     }
+    /*
     for(int i = start-2;i>=0;i--){
         if(i>=0&&i<subrows.size())
             if(!tryPlace(subrows.at(i),n,bestCost,p))break;
@@ -191,7 +192,7 @@ std::pair<subrow*,int> row::placeRow(node* n){
     for(int i = start+2;i<subrows.size();i++){
         if(i>=0&&i<subrows.size())
             if(!tryPlace(subrows.at(i),n,bestCost,p))break;
-    }
+    }*/
     return {p,bestCost};
 }
 int row::getCost()
@@ -297,7 +298,7 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
         if(n1->origin_x==n2->origin_x)
-            return n1->width > n2->width; // wider first
+            return n1->width < n2->width; 
         return n1->origin_x < n2->origin_x;
         }
     );
