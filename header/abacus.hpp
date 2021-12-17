@@ -50,7 +50,7 @@ struct row{
 	}
 	int y;
 	int height;
-	std::list<subrow> subrows;
+	std::vector<subrow> subrows;
 	//need sorted by x.
 	void block(fixed_node&terminal);
 	std::pair<subrow*,int> placeRow(node* n);

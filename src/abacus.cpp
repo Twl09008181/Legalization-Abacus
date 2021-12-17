@@ -9,26 +9,27 @@ void row::block(fixed_node &terminal){
     //pre-checking y range
     if(terminal.origin_y + terminal.height <= y  || terminal.origin_y >= y + height)return ;
 
-    subrow& last = *subrows.rbegin();// this is why user need to enter terminal with the increasing x.
+    subrow* last = &(*subrows.rbegin());// this is why user need to enter terminal with the increasing x.
     int condition;//overlap condition
     int t_x1 = terminal.origin_x;
     int t_x2 = t_x1 + terminal.width;
-    if( (t_x2 <= last.x1 )  || ( t_x1 >= last.x2) )condition = 0;//not overlap in x.
-    else if(t_x1 <= last.x1  && t_x2 >=last.x2)condition = 1; // completely ovelap
-    else if(t_x1 <= last.x1 && t_x2 < last.x2)condition = 2; // x|xx---|
-    else if(t_x1 > last.x1 && t_x2 < last.x2)condition = 3;//|--xxx--| need split
-    else if(t_x1 > last.x1 && t_x2 >= last.x2)condition = 4; //|---xx|x 
+    if( (t_x2 <= last->x1 )  || ( t_x1 >= last->x2) )condition = 0;//not overlap in x.
+    else if(t_x1 <= last->x1  && t_x2 >=last->x2)condition = 1; // completely ovelap
+    else if(t_x1 <= last->x1 && t_x2 < last->x2)condition = 2; // x|xx---|
+    else if(t_x1 > last->x1 && t_x2 < last->x2)condition = 3;//|--xxx--| need split
+    else if(t_x1 > last->x1 && t_x2 >= last->x2)condition = 4; //|---xx|x 
     if(condition==1)
         subrows.pop_back();//delete subrow
     else if(condition==2)
-        last.x1 = t_x2;
+        last->x1 = t_x2;
     else if(condition==3){//split new subrow
-        subrows.push_back({t_x2,last.x2-t_x2,y});
-        last.x2 = t_x1;
+        subrows.push_back({t_x2,last->x2-t_x2,y});
+        last = &subrows.at(subrows.size()-2);//push back may allocate new memory
+        last->x2 = t_x1;
     }
     else if(condition==4)
-        last.x2 = t_x1;
-    if(condition > 1) last.remainSpace = last.x2 - last.x1;
+        last->x2 = t_x1;
+    if(condition > 1) last->remainSpace = last->x2 - last->x1;
 }
 
 // abacus datastructure.
@@ -142,26 +143,54 @@ std::pair<int,int> subrow::placeRow(node*n){
     return {cost1,cost2};
 }
 
+
+int BsSub(std::vector<subrow>&subs,node*n){
+    int l = 0;
+    int r= subs.size()-1;
+    while(l<r)
+    {
+        int mid = (l+r)/2;
+        if(subs.at(mid).x1==n->origin_x)return mid;
+        else if(subs.at(mid).x1 > n->origin_x)r = mid-1;
+        else l = mid+1;
+    }
+    return std::max(0,l);
+}
+
+bool tryPlace(subrow&sub,node*n,int&bestCost,subrow*&bestp)
+{
+    if(sub.remainSpace >= n->width){//still have space
+        auto cost = sub.placeRow(n);
+        int deltaCost = cost.second - cost.first;//new - original : cost of placing one node.
+        if(deltaCost < bestCost){
+            bestp = &sub;
+            bestCost = deltaCost;
+            return true;
+        }
+        else 
+            return false;
+    }
+    return true;
+}
+
 //first : optimal subrow to place n
 //second : delta_cost
 std::pair<subrow*,int> row::placeRow(node* n){
     //std::cout<<"placerow\n";
     subrow* p = nullptr;//find a subrow to place p.
     int bestCost = INT_MAX;
-    int i = 0;
-    for(auto &sub:subrows){
-        //std::cout<<i++<<"remain:"<<sub.remainSpace<<"\n";
-        if(sub.remainSpace >= n->width){//still have space
-            auto cost = sub.placeRow(n);
-            int deltaCost = cost.second - cost.first;//new - original : cost of placing one node.
-            if(deltaCost < bestCost){
-                p = &sub;
-                bestCost = deltaCost;
-            }
-            else if (deltaCost >= bestCost){ // already find optimal  
-                break;
-            }
-        }
+    int start = BsSub(subrows,n);
+    for(int i = start-1;i<=start+1;i++){
+        if(i>=0&&i<subrows.size())
+            if(!tryPlace(subrows.at(i),n,bestCost,p))break;
+    }
+    for(int i = start-2;i>=0;i--){
+        if(i>=0&&i<subrows.size())
+            if(!tryPlace(subrows.at(i),n,bestCost,p))break;
+    }
+    for(int i = start+2;i<subrows.size();i++){
+        if(i>=0&&i<subrows.size())
+            if(!tryPlace(subrows.at(i),n,bestCost,p))break;
     }
     return {p,bestCost};
 }
@@ -248,6 +277,22 @@ int binarySearchRow(std::vector<row>&rows,node*n)
     return std::max(0,l);
 }
 
+
+bool tryPlace2(std::vector<row>&rows,int i,node*n,int&bestCost,subrow*&bestPlace,int&bestRow)
+{
+    row& r = rows.at(i);
+    auto place = r.placeRow(n);
+    if(place.first && place.second + std::abs(r.y - n->origin_y) < bestCost){
+        bestCost = place.second + std::abs(r.y - n->origin_y);
+        bestPlace = place.first;
+        bestRow = i;
+        return true;
+    }
+    else if(place.first)
+    return false;
+    return true;
+}
+
 int abacus(std::vector<node*>nodes,std::vector<row>&rows){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
@@ -264,16 +309,19 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         int bestRow = -1;
         int startRow = binarySearchRow(rows,n);
         for(int i = startRow-1;i<=startRow+1;i++){
-            if(i>=0 && i<rows.size()){
-                row& r = rows.at(i);
-                auto place = r.placeRow(n);
-                if(place.first && place.second + std::abs(r.y - n->origin_y) < bestCost){
-                    bestCost = place.second + std::abs(r.y - n->origin_y);
-                    bestplace = place.first;
-                    bestRow = i;
-                }
-            }
+            if(i>=0 && i<rows.size())
+                tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
         }
+        
+        for(int i = startRow-2;i>=0;i--){
+            if(i>=0 && i<rows.size())
+                if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
+        }
+        for(int i = startRow+2;i<rows.size();i++){
+            if(i>=0 && i<rows.size())
+                if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
+        }
+
         if(bestplace){
             bestplace->insert(n);
             n->y = rows.at(bestRow).y;
@@ -284,11 +332,12 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
     }
     bool done = true;
     if(!notDone.empty()){
-        std::cout<<"before refinement\n";
+        /*std::cout<<"before refinement\n";
 		for(auto n:nodes){
 			std::cout<<"pos : "<<n->x<<" "<<n->y<<" ";
 			std::cout<<"shape:"<<n->width<<" "<<n->height<<"\n";
 		}
+   */     
         std::cout<<"do refine\n";
         done = RefinementPlace(notDone,rows);
     }
