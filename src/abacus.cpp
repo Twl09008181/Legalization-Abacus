@@ -263,7 +263,7 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         subrow* bestplace = nullptr;
         int bestRow = -1;
         int startRow = binarySearchRow(rows,n);
-        for(int i = startRow-1;i<startRow+1;i++){
+        for(int i = startRow-1;i<=startRow+1;i++){
             if(i>=0 && i<rows.size()){
                 row& r = rows.at(i);
                 auto place = r.placeRow(n);
