@@ -3,8 +3,9 @@
 #include<list>
 #include <algorithm>
 #include "header/abacus.hpp" 
+#include <fstream>
 
-
+void output(std::vector<row>&rows,std::vector<fixed_node*>terminals,std::vector<node*>&nodes);
 
 
 int main()
@@ -92,7 +93,30 @@ int main()
 		std::cout<<"abacus failed\n";
 	}
 
-
+	output(rows,terminals,nodes);
 
 	return 0;
+}
+
+void output(std::vector<row>&rows,std::vector<fixed_node*>terminals,std::vector<node*>&nodes){
+	std::ofstream out{"Layout"};
+
+
+	out<<rows.size()<<"\n"<<terminals.size()<<"\n"<<nodes.size()<<"\n\n";
+
+	for(auto r:rows){
+		out<<r.subrows.begin()->x1<<" "<<r.subrows.rbegin()->x2<<" "<<r.y<<" "<<r.y+r.height<<"\n";
+	}
+	out<<"\n";
+
+	for(auto t:terminals)
+		out<<t->origin_x<<" "<<t->origin_x + t->width<<" "<<t->origin_y<<" "<<t->origin_y+t->height<<"\n";
+
+	out<<"\n";
+
+	for(auto n:nodes)
+		out<<n->x<<" "<<n->x+n->width<<" "<<n->y<<" "<<n->y+n->height<<"\n";
+
+
+	out.close();
 }
