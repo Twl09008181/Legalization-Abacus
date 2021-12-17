@@ -142,9 +142,12 @@ std::pair<int,int> subrow::placeRow(node*n){
 //first : optimal subrow to place n
 //second : delta_cost
 std::pair<subrow*,int> row::placeRow(node* n){
+    std::cout<<"placerow\n";
     subrow* p = nullptr;//find a subrow to place p.
     int bestCost = INT_MAX;
+    int i = 0;
     for(auto &sub:subrows){
+        std::cout<<i++<<"remain:"<<sub.remainSpace<<"\n";
         if(sub.remainSpace >= n->width){//still have space
             auto cost = sub.placeRow(n);
             int deltaCost = cost.second - cost.first;
@@ -166,6 +169,36 @@ int row::getCost()
         cost += sub.placeRow().first;
     return cost;
 }
+int row::getRemain()
+{
+    int space = 0;
+    for(auto sub:subrows)space+=sub.remainSpace;
+    return space;
+}
+
+std::vector<node*> subrow::RipUp(int threshold){
+    std::vector<node*>candidate;
+    nodes.remove_if([this,&candidate,threshold](node*n){
+        if(n->width < threshold){
+            candidate.push_back(n);
+            remainSpace+=n->width;
+            return true;
+        }
+        return false;
+    });
+    return candidate;
+}
+std::vector<node*> row::RipUp(int threshold){
+    std::vector<node*>candidate;
+    for(auto &sub:subrows)
+    {
+        auto subCand = sub.RipUp(threshold);
+        for(auto c:subCand)
+            candidate.push_back(c);
+    }
+    return candidate;
+}
+
 int abacus(std::vector<node>&nodes,std::vector<row>&rows){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node&n1,node&n2){return n1.origin_x < n2.origin_x;});

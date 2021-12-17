@@ -32,6 +32,7 @@ struct subrow{
 			exit(1);
 		}
 	}
+	std::vector<node*>RipUp(int threshold);//RipUp  the width <= threshold
 	std::pair<int,int> placeRow(node*n=nullptr);
 	std::list<node*>nodes;
 	int x1,x2;
@@ -51,6 +52,8 @@ struct row{
 	void block(fixed_node&terminal);
 	std::pair<subrow*,int> placeRow(node* n);
 	int getCost();
+	int getRemain();
+	std::vector<node*> RipUp(int threshold);//RipUp  the width <= threshold
 };
 
 void placeTerminal(std::vector<fixed_node>&terminals,std::vector<row>&rows);

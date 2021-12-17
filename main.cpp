@@ -5,13 +5,16 @@
 #include "header/abacus.hpp" 
 
 
+
+std::vector<node*>pack(std::vector<node*>&nodes,row&r);
+
 int main()
 {
 
 
-	/*
+	
 	// x range : (0,30)	
-	// row height = 4 
+	// row rowH = 4 
 	int rowH = 4;
 	int rowW = 30;
 	row row0{0,2,rowW,rowH};
@@ -37,51 +40,76 @@ int main()
 		for(auto r:rows)
 			r->block(*t);
 	}
+	/*
 	for(auto r:rows){
 		for(auto sub:r->subrows){
 			std::cout<<"["<<sub.x1<<" "<<sub.x2<<"] ";
 		}
 		std::cout<<"\n";
-	}
-	*/
-
-
-	int height = 10;
-	subrow row1{30,40};//30 ~ 70
-
-	//first prepare total width = 30 to pack.
-	node n1{0,0,5,height};//adjust to 30~35
-	node n2{15,0,5,height};//adjust to 35~40
-	node n3{35,0,10,height};//adjust to 40~50
-	node n4{55,0,5,height};// same : 55~60
-	node n5{80,0,5,height};//adjust to 65~70
-
-	std::vector<node>nodes;
-	nodes.push_back(n1);
-	nodes.push_back(n2);
-	nodes.push_back(n3);
-	nodes.push_back(n4);
-	nodes.push_back(n5);
-
-	for(auto &n:nodes)
-		row1.insert(&n);
-	row1.placeRow();
-
-	std::cout<<"remain:"<<row1.remainSpace<<"\n";
+	}*/
 	
-	for(auto &n:nodes)
-		std::cout<<n.x<<" "<<n.x+n.width<<"\n";
 
-	node n6{90,0,10,height};//packed from behind. n4,n5 need be pushed front 10 width.
-	row1.insert(&n6);
-	row1.placeRow();	
+	node n1{0,0,12,rowH};
+	node n2{0,0,1,rowH};
+	node n3{10,0,2,rowH};
+	node n4{40,0,2,rowH};//can't place !! 
+	node n5{41,0,1,rowH};
 
-	for(auto &n:nodes)
-		std::cout<<n.x<<" "<<n.x+n.width<<"\n";
-	std::cout<<n6.x<<" "<<n6.x+n6.width<<"\n";
+	std::vector<node*>nodes;
+	nodes.push_back(&n1);
+	nodes.push_back(&n2);
+	nodes.push_back(&n3);
+	nodes.push_back(&n4);
+	nodes.push_back(&n5);
 
-	std::cout<<"remain:"<<row1.remainSpace<<"\n";
+	std::cout<<"row0 remain:"<<row0.getRemain()<<"\n";
+	std::vector<node*>unpacked = pack(nodes,row0);
+
+	if(unpacked.empty())
+	for(auto n:nodes)
+		std::cout<<n->x<<" "<<n->x+n->width<<"\n";
+	else{
+		std::cout<<"placed failed--------------- !!\n";
+		for(auto n:unpacked)
+			std::cout<<"width: "<<n->width<<"\n";
+	}
+
+	while(!unpacked.empty())
+	{
+		auto ripup = row0.RipUp((*unpacked.begin())->width);
+		unpacked = pack(unpacked,row0);
+		if(!unpacked.empty())
+		{
+			std::cout<<"final :can't place!\n";
+			for(auto un:unpacked)
+				std::cout<<un->width<<"\n";
+			break;
+		}
+		unpacked = pack(ripup,row0);
+	}
+
+	if(unpacked.empty()){
+		std::cout<<"cost :"<<row0.getCost()<<"\n";
+		for(auto n:nodes)
+			std::cout<<n->x<<" "<<n->x+n->width<<"\n";
+	}
+
+
 
 
 	return 0;
+}
+
+std::vector<node*>pack(std::vector<node*>&nodes,row&r){
+	std::vector<node*>unpacked;
+	for(auto n:nodes){
+		auto result = r.placeRow(n);
+		if(result.first==nullptr){
+			unpacked.push_back(n);
+		}
+		else
+			result.first->insert(n);//place
+	}
+	std::sort(unpacked.begin(),unpacked.end(),[](node* n1,node*n2){return n1->width > n2->width;});
+	return unpacked;
 }
