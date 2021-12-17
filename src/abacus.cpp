@@ -23,7 +23,7 @@ void row::block(fixed_node &terminal){
     else if(condition==2)
         last.x1 = t_x2;
     else if(condition==3){//split new subrow
-        subrows.push_back({t_x2,last.x2-t_x2});
+        subrows.push_back({t_x2,last.x2-t_x2,y});
         last.x2 = t_x1;
     }
     else if(condition==4)
@@ -105,13 +105,14 @@ cluster* place(cluster*lastC,node *n,subrow*r)
     return lastC;
 }
 // placeRow helper function : update the node's position and return the cost  sum (x-x')^2
-int getPos(cluster*lastC){
+int getPos(cluster*lastC,int y){
     int cost = 0;
     while(lastC){
         int x = lastC->xc;
         for(node* n:lastC->nodes){
             n->x = x;
-            cost += n->weight * (n->x - n->origin_x) * (n->x - n->origin_x);
+            cost+=std::abs(n->x - n->origin_x);
+            cost+=std::abs(n->origin_y - y);
             x += n->width;
         }
         lastC = lastC->predecessor;
@@ -126,11 +127,11 @@ std::pair<int,int> subrow::placeRow(node*n){
         lastC = place(lastC,*ptr,this);
     
     //caculate position and cost.
-    int cost1 = getPos(lastC);//get the original cost
+    int cost1 = getPos(lastC,y);//get the original cost
     int cost2 = cost1;
     if(n){
         lastC = place(lastC,n,this);// get the new cost
-        cost2 = getPos(lastC);
+        cost2 = getPos(lastC,y);
     }
     //memory free.
     while(lastC){

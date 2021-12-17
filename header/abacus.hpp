@@ -24,8 +24,8 @@ struct node{
 	std::string name;
 };
 struct subrow{
-	subrow(int startx,int width)
-		: x1{startx},x2{startx + width}{remainSpace = x2-x1;}
+	subrow(int startx,int width,int coordinate)
+		: x1{startx},x2{startx + width},y{coordinate}{remainSpace = x2-x1;}
 	void insert(node*n){
 		nodes.push_back(n);
 		remainSpace-=n->width;
@@ -39,13 +39,14 @@ struct subrow{
 	std::list<node*>nodes;
 	int x1,x2;
 	int remainSpace;
+	int y;
 };
 
 using fixed_node = node;
 struct row{
 	row(int x,int coordinate,int w,int h)
 		:y{coordinate},height{h}{
-		subrows.push_back({x,w});
+		subrows.push_back({x,w,coordinate});
 	}
 	int y;
 	int height;
