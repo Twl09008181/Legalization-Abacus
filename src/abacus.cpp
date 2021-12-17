@@ -3,12 +3,13 @@
 
 
 
-// user need to check the row y range is covered by this terminal node.
+// user need to enter terminal with the increasing x order.
+// the block function check the relative position between termianl node and place-row , and make the  correction : split the subrows or boundary correction.
 void row::block(fixed_node &terminal){
     //pre-checking y range
-    if(terminal.origin_y + terminal.height <= y  || terminal.origin_y >= y + height)
-        return ;
-    subrow& last = *subrows.rbegin();       
+    if(terminal.origin_y + terminal.height <= y  || terminal.origin_y >= y + height)return ;
+
+    subrow& last = *subrows.rbegin();// this is why user need to enter terminal with the increasing x.
     int condition;//overlap condition
     int t_x1 = terminal.origin_x;
     int t_x2 = t_x1 + terminal.width;
@@ -30,7 +31,7 @@ void row::block(fixed_node &terminal){
     if(condition > 1) last.remainSpace = last.x2 - last.x1;
 }
 
-
+// abacus datastructure.
 struct cluster{
     int xc; // start x-position 
     // abacus dp
@@ -77,7 +78,7 @@ cluster* Collapse(cluster *c,int min_x,int max_x){
     return finalCluster;
 }
 
-//ensure collision
+// modified part : boundary fixed.
 int modify_x(int x1,int x2,node*n){
     if(n->origin_x < x1)
         return x1;
@@ -86,24 +87,24 @@ int modify_x(int x1,int x2,node*n){
     return n->origin_x;
 }
 
-
+// place the node n in subrow r , and return the last Cluster in this subrow.
 cluster* place(cluster*lastC,node *n,subrow*r)
 {
-    int m_x = modify_x(r->x1,r->x2,n);
+    int m_x = modify_x(r->x1,r->x2,n);// abacus fixed.
     //look ahead.
-    if(!lastC || lastC->xc + lastC->wc <= m_x){
+    if(!lastC || lastC->xc + lastC->wc <= m_x){ // if do not need to compact.
         lastC = new cluster(m_x,lastC);
         lastC->AddCell(n);
-        std::cout<<"create cluster, xc:"<<lastC->xc<<" width:"<<lastC->wc<<"\n";
+        //std::cout<<"create cluster, xc:"<<lastC->xc<<" width:"<<lastC->wc<<"\n";
     }
-    else{
+    else{// compactation is best.
         lastC->AddCell(n);
-        lastC = Collapse(lastC,r->x1,r->x2);
-        std::cout<<"collapse cluster, xc:"<<lastC->xc<<" width:"<<lastC->wc<<"\n";
+        lastC = Collapse(lastC,r->x1,r->x2);// need to check whether the new movement will touch the pred. 
+        //std::cout<<"collapse cluster, xc:"<<lastC->xc<<" width:"<<lastC->wc<<"\n";
     }
     return lastC;
 }
-
+// placeRow helper function : update the node's position and return the cost  sum (x-x')^2
 int getPos(cluster*lastC){
     int cost = 0;
     while(lastC){
@@ -118,16 +119,17 @@ int getPos(cluster*lastC){
     return cost;//total cost
 }
 
+// can be called by getting the final position and cost or called trially.(with non-nullptr n)
 std::pair<int,int> subrow::placeRow(node*n){
     cluster* lastC = nullptr;
     for(auto ptr = nodes.begin();ptr!=nodes.end();++ptr)
         lastC = place(lastC,*ptr,this);
     
     //caculate position and cost.
-    int cost1 = getPos(lastC);
+    int cost1 = getPos(lastC);//get the original cost
     int cost2 = cost1;
     if(n){
-        lastC = place(lastC,n,this);
+        lastC = place(lastC,n,this);// get the new cost
         cost2 = getPos(lastC);
     }
     //memory free.
@@ -142,15 +144,15 @@ std::pair<int,int> subrow::placeRow(node*n){
 //first : optimal subrow to place n
 //second : delta_cost
 std::pair<subrow*,int> row::placeRow(node* n){
-    std::cout<<"placerow\n";
+    //std::cout<<"placerow\n";
     subrow* p = nullptr;//find a subrow to place p.
     int bestCost = INT_MAX;
     int i = 0;
     for(auto &sub:subrows){
-        std::cout<<i++<<"remain:"<<sub.remainSpace<<"\n";
+        //std::cout<<i++<<"remain:"<<sub.remainSpace<<"\n";
         if(sub.remainSpace >= n->width){//still have space
             auto cost = sub.placeRow(n);
-            int deltaCost = cost.second - cost.first;
+            int deltaCost = cost.second - cost.first;//new - original : cost of placing one node.
             if(deltaCost < bestCost){
                 p = &sub;
                 bestCost = deltaCost;
@@ -166,7 +168,7 @@ int row::getCost()
 {
     int cost = 0;
     for(auto &sub:subrows)
-        cost += sub.placeRow().first;
+        cost += sub.placeRow().first;// call placeRow with nullptr.
     return cost;
 }
 int row::getRemain()
@@ -175,7 +177,7 @@ int row::getRemain()
     for(auto sub:subrows)space+=sub.remainSpace;
     return space;
 }
-
+// rip up the node with width < threshod and return.
 std::vector<node*> subrow::RipUp(int threshold){
     std::vector<node*>candidate;
     nodes.remove_if([this,&candidate,threshold](node*n){

@@ -19,6 +19,7 @@ struct node{
 	int height;
 	int weight = 1;
 	int x,y;
+	std::string name;
 };
 struct subrow{
 	subrow(int startx,int width)
@@ -26,8 +27,7 @@ struct subrow{
 	void insert(node*n){
 		nodes.push_back(n);
 		remainSpace-=n->width;
-		if(remainSpace < 0)
-		{
+		if(remainSpace < 0){
 			std::cerr<<"subrow insert error\n";
 			exit(1);
 		}
@@ -57,7 +57,6 @@ struct row{
 };
 
 void placeTerminal(std::vector<fixed_node>&terminals,std::vector<row>&rows);
-
 int abacus(std::vector<node>&nodes,std::vector<row>&rows);
 
 #endif
