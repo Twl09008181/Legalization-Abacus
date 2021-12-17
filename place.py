@@ -8,14 +8,14 @@ from numpy.core.fromnumeric import size
 
 
 
-def drawLayout(ax,block,fill,text,color,linewidth):
+def drawLayout(ax,block,fill,text,color):
     #define Matplotlib figure and axis
 
     max_y = 0
     max_x = 0
     for i in range(len(block)):
         x1,x2,y1,y2 = block[i]
-        ax.add_patch(Rectangle((x1,y1),x2-x1,y2-y1,edgecolor=color,color=color,fill=fill,linewidth=linewidth))
+        ax.add_patch(Rectangle((x1,y1),x2-x1,y2-y1,edgecolor=color,color=color,fill=fill))
         if text:
             ax.text(floor(x1+x2)/2,floor(y1+y2)/2,i)
         if(x2 > max_x):
@@ -55,9 +55,9 @@ layout.close()
 
 
 fig, ax = plt.subplots()
-drawLayout(ax,Rows,False,False,"black",3)
-drawLayout(ax,terminals,True,False,"red",1)
-drawLayout(ax,nodes,False,True,"green",1)
+drawLayout(ax,Rows,False,False,"black")
+drawLayout(ax,terminals,True,False,"red")
+drawLayout(ax,nodes,False,True,"green")
 
 
 ax.plot()

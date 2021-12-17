@@ -246,13 +246,18 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         int bestCost = INT_MAX;
         subrow* bestplace = nullptr;
         row* bestRow = nullptr;
+        
+        int maxTry = 1;
+        int count = 0;
         for(auto &r:rows){
             auto place = r.placeRow(n);
             if(place.first && place.second < bestCost){
                 bestCost = place.second;
                 bestplace = place.first;
                 bestRow = &r;
+                count++;
             }
+            if(count==maxTry)break;
         }
         if(bestplace){
             bestplace->insert(n);

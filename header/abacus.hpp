@@ -10,6 +10,8 @@
 struct node{
 	node(int x,int y,int w = -1,int h = -1 )
 		:origin_y{y},origin_x{x},width{w},height{h}{}
+	node(std::string n,int x,int y,int w  ,int h   )
+		:name{n},origin_y{y},origin_x{x},width{w},height{h}{}
 	void setShape(int w,int h){
 		width = w;
 		height = h;

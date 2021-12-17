@@ -4,116 +4,169 @@
 #include <algorithm>
 #include "header/abacus.hpp" 
 #include <fstream>
+#include <string>
 
 void output(std::vector<row>&rows,std::vector<fixed_node*>terminals,std::vector<node*>&nodes);
 
+void output2(std::vector<node*>&nodes,std::vector<fixed_node*>&terminals1,std::vector<fixed_node*>&terminals2);
+void parser(std::string auxName,std::vector<row>&rows,std::vector<fixed_node*>&terminals1,std::vector<fixed_node*>&terminals2,std::vector<node*>&nodes);
 
-int main()
+int main(int argc,char *argv[])
 {
 
+	std::vector<row>rows;
+	std::vector<fixed_node*>terminals1;
+	std::vector<fixed_node*>terminals2;
+	std::vector<node*>nodes;
+	parser(argv[1],rows,terminals1,terminals2,nodes);
 
-	
-	// x range : (0,30)	
-	// row rowH = 4 
-	int rowH = 4;
-	int rowW = 30;
-	row row0{0,2,rowW,rowH};
-	row row1{0,6,rowW,rowH};
-	row row2{0,10,rowW,rowH};
-	row row3{0,14,rowW,rowH};
-	
-	std::vector<row>rows{row0,row1,row2,row3};
-	//std::vector<row>rows{row0};
-
-	fixed_node t0{12,2,4,12}; //x = 12 ~ 16 , y = 2 ~ 14
-	fixed_node t1{18,4,2,8};  //x = 18 ~ 20 , y = 4 ~ 12 
-	fixed_node t2{22,0,2,20}; //x = 22 ~ 24 , y = 0 ~ 20
-	fixed_node t3{25,3,2,2};  //x = 25 ~ 27   y = 3 ~ 5
-	fixed_node t4{28,4,4,11}; //x = 28 ~ 32   y = 4 ~ 15 
-	fixed_node t5{33,1,2,19}; //x = 33 ~ 35   y = 2 ~ 20
-
-	std::vector<fixed_node*> terminals{&t0,&t1,&t2,&t3,&t4,&t5};
-	std::sort(terminals.begin(),terminals.end(),
+	std::sort(terminals1.begin(),terminals1.end(),
 		[](fixed_node*t1,fixed_node*t2){return t1->origin_x < t2->origin_x;}
 	);
 	
-	for(auto t : terminals){
+	for(auto t : terminals1){
 		for(auto &r:rows)
 			r.block(*t);
 	}
-	/*
-	for(auto r:rows){
-		for(auto sub:r->subrows){
-			std::cout<<"["<<sub.x1<<" "<<sub.x2<<"] ";
-		}
-		std::cout<<"\n";
-	}*/
-	
-
-	node n1{0,0,12,rowH};
-	node n2{0,0,1,rowH};
-	node n3{10,0,2,rowH};
-	node n4{40,0,2,rowH};//can't place !! 
-	node n5{41,0,1,rowH};
-	node n6{100,0,22,rowH};
-	node n7{15,0,4,rowH};
-	node n8{31,0,4,rowH};
-	node n9{11,0,4,rowH};
-	node n10{0,0,4,rowH};
-	node n11{5,0,4,rowH};
-	node n12{5,0,4,rowH};
-	node n13{5,0,4,rowH};
-	node n14{5,0,2,rowH};
-	node n15{5,0,2,rowH};
-	node n16{5,0,2,rowH};
-	node n17{5,0,2,rowH};
-	node n18{5,0,2,rowH};
-	node n19{5,0,2,rowH};
-	node n20{5,0,2,rowH};
-	node n21{5,0,1,rowH};
-	node n22{5,0,1,rowH};
-
-	std::vector<node*>nodes;
-	nodes.push_back(&n1);
-	nodes.push_back(&n2);
-	nodes.push_back(&n3);
-	nodes.push_back(&n4);
-	nodes.push_back(&n5);
-	nodes.push_back(&n6);
-	nodes.push_back(&n7);
-	nodes.push_back(&n8);
-	nodes.push_back(&n9);
-	nodes.push_back(&n10);
-	nodes.push_back(&n11);
-	nodes.push_back(&n12);
-	nodes.push_back(&n13);
-	nodes.push_back(&n14);
-	nodes.push_back(&n15);
-	nodes.push_back(&n16);
-	nodes.push_back(&n17);
-	nodes.push_back(&n18);
-	nodes.push_back(&n19);
-	nodes.push_back(&n20);
-	nodes.push_back(&n21);
-	nodes.push_back(&n22);
-
-
+	std::cout<<"start do abacus\n";
 	int cost = abacus(nodes,rows);
 	if(cost!=-1)
-	{
 		std::cout<<"total cost:"<<cost<<"\n";
-		for(auto n:nodes){
-			std::cout<<"pos : "<<n->x<<" "<<n->y<<" ";
-			std::cout<<"shape:"<<n->width<<" "<<n->height<<"\n";
-		}
-	}
-	else{
+	else
 		std::cout<<"abacus failed\n";
-	}
-
-	output(rows,terminals,nodes);
+	
+	//output(rows,terminals1,nodes);
+	output2(nodes,terminals1,terminals2);
 
 	return 0;
+}
+
+void pl_Line(std::ifstream& pl,std::string &name,int &x,int &y,bool *is_fixed=nullptr){
+	pl >> name;
+	std::string x_str,y_str;
+	pl >> x_str >>y_str;
+	x = std::stoi(x_str);
+	y = std::stoi(y_str);
+	std::string trash;
+	pl >> trash >> trash;
+
+	if(is_fixed)
+	{
+		pl >> trash;
+		*is_fixed = (trash=="/FIXED");
+	}
+}
+
+void nodes_Line(std::ifstream& nodes,std::string name,int &w,int &h,bool *is_fixed=nullptr){
+	std::string n;
+	nodes >> n;
+	if(n!=name){std::cerr<<"nodes_Line  error\n";exit(1);}
+	std::string w_str,h_str;
+	nodes >>w_str >>h_str;
+	w = std::stoi(w_str);
+	h = std::stoi(h_str);
+	if(is_fixed)
+		nodes >> n;
+}
+
+
+void parser(std::string auxName,std::vector<row>&rows,std::vector<fixed_node*>&terminals1,std::vector<fixed_node*>&terminals2,std::vector<node*>&nodes){
+
+	std::ifstream aux{auxName};
+	if(!aux){std::cerr<<"can't open "<<auxName<<"\n";exit(1);}
+	//get .nodes .pl .scl
+	std::string trash,nodesName,placeName,rowName;
+	aux>>trash>>trash>>nodesName>>trash>>trash>>placeName>>rowName>>trash;
+	aux.close();
+	// read scl file
+	std::ifstream scl{rowName};
+	if(!scl){std::cerr<<"can't open "<<rowName<<"\n";exit(1);}
+	std::string rowInfo = " ";
+	while(rowInfo!="NumRows")scl>>rowInfo;scl >> rowInfo; // : 
+	scl >> rowInfo;
+	int rowNum = std::stoi(rowInfo);
+	rows.reserve(rowNum);
+	for(int i = 0;i < rowNum;i++)
+	{
+		while(rowInfo!="Coordinate")scl>>rowInfo;scl>>rowInfo;// :
+		scl >> rowInfo;
+		int y = std::stoi(rowInfo);
+
+		while(rowInfo!="Height")scl>>rowInfo;scl>>rowInfo;// :
+		scl >> rowInfo;
+		int height = std::stoi(rowInfo);
+		
+		while(rowInfo!="Sitewidth")scl>>rowInfo;scl>>rowInfo;// :
+		scl >> rowInfo;
+		int siteWidth = std::stoi(rowInfo);
+
+		while(rowInfo!="SubrowOrigin")scl>>rowInfo;scl>>rowInfo;// :
+		scl >> rowInfo;
+		int x = std::stoi(rowInfo);
+		while(rowInfo!="NumSites")scl>>rowInfo;scl>>rowInfo;// :
+		scl >> rowInfo;
+		int NumSites = std::stoi(rowInfo);
+		rows.push_back({x,y,NumSites*siteWidth,height});
+	}
+	scl.close();
+
+	std::ifstream nodesinfo{nodesName};
+	std::ifstream placeinfo{placeName};
+	if(!nodesinfo){std::cerr<<"can't open "<<nodesName<<"\n";exit(1);}
+	if(!placeinfo){std::cerr<<"can't open "<<placeName<<"\n";exit(1);}
+	std::string ninfo;
+	
+	while(ninfo!="NumNodes")nodesinfo>>ninfo;nodesinfo>>ninfo;
+	nodesinfo >> ninfo;
+	int numNodes = std::stoi(ninfo);
+	while(ninfo!="NumTerminals")nodesinfo>>ninfo;nodesinfo>>ninfo;
+	nodesinfo >> ninfo;
+	int Numterm = std::stoi(ninfo);
+	nodesinfo >> ninfo;//first nodes name
+
+	int x,y,w,h;
+	std::string coordinate;
+	while(coordinate!=ninfo)placeinfo >> coordinate;
+
+	//first line
+	std::string name = ninfo;
+	nodesinfo >> ninfo;
+	w = std::stoi(ninfo);
+	nodesinfo >> ninfo;
+	h = std::stoi(ninfo);	
+
+	placeinfo >> coordinate;
+	x = std::stoi(coordinate);
+	placeinfo >> coordinate;
+	y = std::stoi(coordinate);
+	placeinfo >> coordinate >> coordinate;
+
+	nodes.push_back(new node{name,x,y,w,h});
+	for(int i = 1;i < numNodes - Numterm;i++)
+	{
+		pl_Line(placeinfo,name,x,y);
+		nodes_Line(nodesinfo,name,w,h);
+		nodes.push_back(new node{name,x,y,w,h});
+		//std::cout<<name<<" "<<x<<" "<<y<<" "<<w<<" "<<h<<"\n";
+	}
+	for(int i = 0;i<Numterm;i++)
+	{
+		bool isFixed;
+		pl_Line(placeinfo,name,x,y,&isFixed);
+		nodes_Line(nodesinfo,name,w,h,&isFixed);
+		if(isFixed)
+			terminals1.push_back(new node{name,x,y,w,h});
+		else 
+			terminals2.push_back(new node{name,x,y,w,h});
+		
+		//std::cout<<name<<" "<<x<<" "<<y<<" "<<w<<" "<<h<<"\n";
+	}
+
+
+	nodesinfo.close();
+	placeinfo.close();
+
+
 }
 
 void output(std::vector<row>&rows,std::vector<fixed_node*>terminals,std::vector<node*>&nodes){
@@ -137,4 +190,22 @@ void output(std::vector<row>&rows,std::vector<fixed_node*>terminals,std::vector<
 
 
 	out.close();
+}
+void output2(std::vector<node*>&nodes,std::vector<fixed_node*>&terminals1,std::vector<fixed_node*>&terminals2){
+
+	std::ofstream out{"output.pl"};
+
+	for(auto n:nodes)
+		out << n->name << " "<<n->x<<" "<<n->y<<" : N\n";
+	for(auto n:terminals1)
+		out << n->name << " "<<n->origin_x<<" "<<n->origin_y<<" : N /FIXED\n";
+	for(auto n:terminals2)
+		out << n->name << " "<<n->origin_x<<" "<<n->origin_y<<" : N /FIXED_NI\n";
+
+	out.close();
+
+
+
+
+
 }
