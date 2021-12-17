@@ -233,6 +233,21 @@ bool RefinementPlace(std::vector<node*>&notDone,std::vector<row>&rows){
     return notDone.empty();
 }
 
+
+int binarySearchRow(std::vector<row>&rows,node*n)
+{
+    int l = 0;
+    int r = rows.size()-1;
+    while(l<r)
+    {
+        int mid = (l+r)/2;
+        if(rows.at(mid).y==n->origin_y)return mid;
+        else if(rows.at(mid).y > n->origin_y)r = mid-1;
+        else l = mid+1;
+    }
+    return std::max(0,l);
+}
+
 int abacus(std::vector<node*>nodes,std::vector<row>&rows){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
@@ -246,23 +261,22 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
     for(auto n : nodes){
         int bestCost = INT_MAX;
         subrow* bestplace = nullptr;
-        row* bestRow = nullptr;
-        
-        int maxTry = 1;
-        int count = 0;
-        for(auto &r:rows){
-            auto place = r.placeRow(n);
-            if(place.first && place.second < bestCost){
-                bestCost = place.second;
-                bestplace = place.first;
-                bestRow = &r;
-                count++;
+        int bestRow = -1;
+        int startRow = binarySearchRow(rows,n);
+        for(int i = startRow-1;i<startRow+1;i++){
+            if(i>=0 && i<rows.size()){
+                row& r = rows.at(i);
+                auto place = r.placeRow(n);
+                if(place.first && place.second + std::abs(r.y - n->origin_y) < bestCost){
+                    bestCost = place.second + std::abs(r.y - n->origin_y);
+                    bestplace = place.first;
+                    bestRow = i;
+                }
             }
-            if(count==maxTry)break;
         }
         if(bestplace){
             bestplace->insert(n);
-            n->y = bestRow->y;
+            n->y = rows.at(bestRow).y;
         }
         else{
             notDone.push_back(n);
