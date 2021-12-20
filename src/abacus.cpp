@@ -53,7 +53,7 @@ void subrow::Collapse(){
 }
 
 // modified part : boundary fixed.
-int modify_x(int x1,int x2,node*n){
+inline int modify_x(int x1,int x2,node*n){
     if(n->origin_x < x1)
         return x1;
     if(n->origin_x + n->width > x2)
@@ -151,15 +151,15 @@ std::pair<subrow*,int> row::placeRow(node* n){
         if(i>=0&&i<subrows.size())
             tryPlace(subrows.at(i),n,bestCost,p);
     }
-   /* 
+   
     for(int i = start-2;i>=0;i--){
-        if(i>=0&&i<subrows.size())
+        if(i>=0)
             if(!tryPlace(subrows.at(i),n,bestCost,p))break;
     }
     for(int i = start+2;i<subrows.size();i++){
-        if(i>=0&&i<subrows.size())
+        if(i<subrows.size())
             if(!tryPlace(subrows.at(i),n,bestCost,p))break;
-    }*/
+    }
     return {p,bestCost};
 }
 int row::getCost()
@@ -210,7 +210,7 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
         if(n1->origin_x==n2->origin_x)
-            return n1->width < n2->width; 
+                return n1->width < n2->width; 
         return n1->origin_x < n2->origin_x;
         }
     );
@@ -221,20 +221,15 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         subrow* bestplace = nullptr;
         int bestRow = -1;
         int startRow = binarySearchRow(rows,n);
-        int range = 10;
+        int range = 18;
         for(int i = startRow-range;i<=startRow+range;i++){
             if(i>=0 && i<rows.size())
                 tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
         }
-        
-        for(int i = startRow-range-1;i>=0;i--){
-            if(i>=0 && i<rows.size())
-                if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
-        }
-        for(int i = startRow+range+1;i<rows.size();i++){
-            if(i>=0 && i<rows.size())
-                if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
-        }
+        for(int i = startRow-range-1;i>=0;i--)
+            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
+        for(int i = startRow+range+1;i<rows.size();i++)
+            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
 
         if(bestplace){
             bestplace->place(n);
