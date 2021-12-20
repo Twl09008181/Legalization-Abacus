@@ -42,12 +42,20 @@ void subrow::Collapse(){
 
     int c = clusterNum - 1;
     // check if overlap happend.
-    for(;c > 0;c--){
+    for(;c >= 0 ;c--){
         cluster&cur = Clusters.at(c);
-        cluster&pred = Clusters.at(c-1);
-        if(pred.xc + pred.wc > cur.xc)
-            pred.AddCluster(&cur);
-        else
+        cur.xc = cur.qc / cur.ec;
+        if(cur.xc < x1) cur.xc = x1;
+        if(cur.xc > x2 - cur.wc)cur.xc = x2 - cur.wc;
+
+        if(c>0){
+            cluster&pred = Clusters.at(c-1);
+            if(pred.xc + pred.wc > cur.xc)
+                pred.AddCluster(&cur);
+            else
+              break;
+        }
+        else 
             break;
     }
     clusterNum = c + 1;
