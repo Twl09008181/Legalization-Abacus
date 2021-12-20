@@ -1,9 +1,9 @@
 
 CXX = g++
-CXXFLAG = -std=c++11
+CXXFLAGS = -std=c++11 
 
 Lab4 : main.cpp src/abacus.o
-	$(CXX) $(CXXFLAG) -o $@ $^ 
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ 
 
 src/abacus.o : src/abacus.cpp header/abacus.hpp
 

@@ -1,5 +1,6 @@
 #include "../header/abacus.hpp"
 #include <algorithm>
+#include <climits>
 
 
 
@@ -150,7 +151,7 @@ std::pair<subrow*,int> row::placeRow(node* n){
         if(i>=0&&i<subrows.size())
             tryPlace(subrows.at(i),n,bestCost,p);
     }
-    /*
+   /* 
     for(int i = start-2;i>=0;i--){
         if(i>=0&&i<subrows.size())
             if(!tryPlace(subrows.at(i),n,bestCost,p))break;
@@ -220,16 +221,17 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         subrow* bestplace = nullptr;
         int bestRow = -1;
         int startRow = binarySearchRow(rows,n);
-        for(int i = startRow-1;i<=startRow+1;i++){
+        int range = 10;
+        for(int i = startRow-range;i<=startRow+range;i++){
             if(i>=0 && i<rows.size())
                 tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
         }
         
-        for(int i = startRow-2;i>=0;i--){
+        for(int i = startRow-range-1;i>=0;i--){
             if(i>=0 && i<rows.size())
                 if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
         }
-        for(int i = startRow+2;i<rows.size();i++){
+        for(int i = startRow+range+1;i<rows.size();i++){
             if(i>=0 && i<rows.size())
                 if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
         }
