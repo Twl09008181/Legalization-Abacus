@@ -35,11 +35,6 @@ void row::block(fixed_node &terminal){
 
 
 void subrow::Collapse(){
-    cluster& lastC = last();
-    lastC.xc = lastC.qc / lastC.ec;
-    if(lastC.xc < x1) lastC.xc = x1;
-    if(lastC.xc > x2 - lastC.wc)lastC.xc = x2 - lastC.wc;
-
     int c = clusterNum - 1;
     // check if overlap happend.
     for(;c >= 0 ;c--){
@@ -47,16 +42,11 @@ void subrow::Collapse(){
         cur.xc = cur.qc / cur.ec;
         if(cur.xc < x1) cur.xc = x1;
         if(cur.xc > x2 - cur.wc)cur.xc = x2 - cur.wc;
-
-        if(c>0){
-            cluster&pred = Clusters.at(c-1);
-            if(pred.xc + pred.wc > cur.xc)
-                pred.AddCluster(&cur);
-            else
-              break;
-        }
+        
+        if(c > 0 && Clusters.at(c-1).xc + Clusters.at(c-1).wc > cur.xc)
+            Clusters.at(c-1).AddCluster(&cur);
         else 
-            break;
+            break;//do not decrease c
     }
     clusterNum = c + 1;
 }
