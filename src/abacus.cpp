@@ -221,7 +221,7 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         subrow* bestplace = nullptr;
         int bestRow = -1;
         int startRow = binarySearchRow(rows,n);
-        int range = 10;
+        int range = 30;
         for(int i = startRow-range;i<=startRow+range;i++){
             if(i>=0 && i<rows.size())
                 tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
