@@ -195,10 +195,13 @@ bool tryPlace2(std::vector<row>&rows,int i,node*n,int&bestCost,subrow*&bestPlace
 {
     row& r = rows.at(i);
     auto place = r.placeRow(n);
-    if(place.first && place.second < bestCost){
+    if(place.first && place.second <= bestCost){
+
+        if(place.second<bestCost || i > bestRow){
         bestCost = place.second;
         bestPlace = place.first;
         bestRow = i;
+        }
         return true;
     }
     else if(place.first)
@@ -234,6 +237,7 @@ void Realjob(jobArgs arg1,threadArg*arg2)
 void DoJob(bool*shutdown,std::queue<jobArgs>*jobs,std::condition_variable*cv,std::mutex*m,threadArg*arg)
 {
     while(!*shutdown){
+        arg->busy = false;
         std::unique_lock<std::mutex>locker(*m);
         cv->wait(locker,[jobs,shutdown]{return *shutdown||!jobs->empty();});//當shudown或是有新任務時停止等待   
         if(*shutdown)break;
@@ -320,10 +324,16 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         }
     );
 
-    int threadNum = 4;
+    int threadNum = 1; 
     threadPool P(threadNum,&rows);
 
+/*
+    std::cout<<rows.at(581).y<<"\n";
+    std::cout<<rows.at(582).y<<"\n";
+*/
     bool succ = true;
+
+    int j = 0;
     for(auto n : nodes){
         P.reset();
         int bestCost = INT_MAX;
@@ -345,16 +355,17 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         //有時候serial順序的解是由thread1得到,因此會先列入 : 因為t.bestcost < bestcost這個地方的關係! 
         for(auto t:P.threadArgs)
         {
-            if(t.bestcost<bestCost )
+            if(t.bestcost<=bestCost )
             {
+                if(t.bestcost<bestCost || t.bestrow>bestRow){
                 bestCost = t.bestcost;
                 bestplace = t.bestplace;
                 bestRow = t.bestrow;
+                }
             }
         }
 
-        //std::cout<<"345 "<<bestplace<<"\n";
-        //exit(1);
+
 
         for(int i = startRow-range-1;i>=0;i--)
             if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
