@@ -206,6 +206,106 @@ bool tryPlace2(std::vector<row>&rows,int i,node*n,int&bestCost,subrow*&bestPlace
     return true;
 }
 
+
+
+#include<thread>
+#include<mutex>
+#include<queue>
+#include <condition_variable>
+
+
+struct jobArgs{
+    node*n;
+    int r;
+};
+struct threadArg{
+    std::vector<row>*rows;
+    int bestcost = INT_MAX;
+    subrow*bestplace = nullptr;
+    int bestrow = -1;
+    bool busy = false;
+};
+
+void Realjob(jobArgs arg1,threadArg*arg2)
+{
+    tryPlace2(*arg2->rows,arg1.r,arg1.n,arg2->bestcost,arg2->bestplace,arg2->bestrow);
+}
+
+void DoJob(bool*shutdown,std::queue<jobArgs>*jobs,std::condition_variable*cv,std::mutex*m,threadArg*arg)
+{
+    while(!*shutdown){
+        std::unique_lock<std::mutex>locker(*m);
+        cv->wait(locker,[jobs,shutdown]{return *shutdown||!jobs->empty();});//當shudown或是有新任務時停止等待   
+        if(*shutdown)break;
+        
+        if(!jobs->empty()){
+            arg->busy = true;
+            auto job = jobs->front();jobs->pop();
+            locker.unlock();
+            Realjob(job,arg);
+        //std::cout<<arg->bestplace<<"\n";
+        }
+        else
+            locker.unlock();
+        arg->busy = false;
+    }
+}
+
+class threadPool{
+public:
+    threadPool(int threadNum,std::vector<row>*rows)
+    {
+        shutDownFlag = false;
+        threadArgs.resize(threadNum);
+        for(auto &targ:threadArgs)
+            targ.rows = rows;
+        for(int i = 0;i<threadNum;i++){
+            threads.push_back(std::thread(DoJob,&shutDownFlag,&jobs,&cv,&m,&threadArgs.at(i)));
+        }
+    }
+
+    void reset()
+    {
+        for(auto &targ:threadArgs)
+        {
+            targ.bestcost = INT_MAX;
+            targ.bestplace = nullptr;
+            targ.bestrow = -1;
+        }
+    }
+
+    void newJob(jobArgs job)
+    {
+        std::unique_lock<std::mutex>locker(m);
+        jobs.push(job);
+        locker.unlock();
+        cv.notify_one();//通知做事
+    }
+    void shutDown()
+    {
+        shutDownFlag = true;
+        cv.notify_all();
+        for(auto &thread:threads){
+            thread.join();
+        }
+    }
+    bool doneJobs(){
+        std::unique_lock<std::mutex>locker(m);
+        /*
+        return jobs.empty();//這邊有bug,光是empty是不夠!
+        */
+       return jobs.empty()&&threadArgs.at(0).busy==false;
+    }
+//private:
+    std::queue<jobArgs>jobs;
+    std::condition_variable cv;
+    std::mutex m;
+    std::vector<std::thread>threads;
+    std::vector<threadArg>threadArgs;
+    bool shutDownFlag;
+};
+
+
 int abacus(std::vector<node*>nodes,std::vector<row>&rows){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
@@ -215,17 +315,42 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         }
     );
 
+    int threadNum = 1;
+    threadPool P(threadNum,&rows);
+
     bool succ = true;
     for(auto n : nodes){
+        P.reset();
         int bestCost = INT_MAX;
         subrow* bestplace = nullptr;
         int bestRow = -1;
         int startRow = binarySearchRow(rows,n);
         int range = 18;
-        for(int i = startRow-range;i<=startRow+range;i++){
-            if(i>=0 && i<rows.size())
-                tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
+
+
+       std::thread *td = nullptr; 
+       for(int i = startRow-range;i<=startRow+range;i++){
+           if(i>=0 && i<rows.size()){
+               P.newJob(jobArgs{n,i});
+           }
         }
+
+        while(!P.doneJobs());//busy wait
+        //process best
+       
+        for(auto t:P.threadArgs)
+        {
+            if(t.bestcost<bestCost)
+            {
+                bestCost = t.bestcost;
+                bestplace = t.bestplace;
+                bestRow = t.bestrow;
+            }
+        }
+
+        //std::cout<<"345 "<<bestplace<<"\n";
+        //exit(1);
+
         for(int i = startRow-range-1;i>=0;i--)
             if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
         for(int i = startRow+range+1;i<rows.size();i++)
@@ -237,6 +362,7 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
             bestplace->cost = bestplace->getPos();
             bestplace->remainSpace-=n->width;
             if(bestplace->remainSpace<0){ 
+                std::cout<<n->name<<"\n";
                 std::cerr<<"abacus remainspace<0!\n";
                 exit(1);
             }
@@ -246,14 +372,20 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
             break;
         }
     }
+
+    std::cout<<"done\n";
     if(succ){
         int cost = 0;
         for(auto &r:rows)
             cost+=r.getCost();
+        while(!P.doneJobs());//busy wait
+        P.shutDown();
         return cost;
     }
     else{
         std::cout<<"abacus failed\n";
+        while(!P.doneJobs());//busy wait
+        P.shutDown();
         return -1;
     }
 }
