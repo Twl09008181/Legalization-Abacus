@@ -238,12 +238,11 @@ void DoJob(bool*shutdown,std::queue<jobArgs>*jobs,std::condition_variable*cv,std
         cv->wait(locker,[jobs,shutdown]{return *shutdown||!jobs->empty();});//當shudown或是有新任務時停止等待   
         if(*shutdown)break;
         
+        arg->busy = true;
         if(!jobs->empty()){
-            arg->busy = true;
             auto job = jobs->front();jobs->pop();
             locker.unlock();
             Realjob(job,arg);
-        //std::cout<<arg->bestplace<<"\n";
         }
         else
             locker.unlock();
@@ -294,7 +293,13 @@ public:
         /*
         return jobs.empty();//這邊有bug,光是empty是不夠!
         */
-       return jobs.empty()&&threadArgs.at(0).busy==false;
+       if(!jobs.empty())return false;
+
+        for(auto targ:threadArgs)
+            if(targ.busy)
+                return false;
+
+        return true;
     }
 //private:
     std::queue<jobArgs>jobs;
@@ -315,7 +320,7 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         }
     );
 
-    int threadNum = 1;
+    int threadNum = 4;
     threadPool P(threadNum,&rows);
 
     bool succ = true;
@@ -325,10 +330,9 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         subrow* bestplace = nullptr;
         int bestRow = -1;
         int startRow = binarySearchRow(rows,n);
-        int range = 18;
+        int range = 100;
 
 
-       std::thread *td = nullptr; 
        for(int i = startRow-range;i<=startRow+range;i++){
            if(i>=0 && i<rows.size()){
                P.newJob(jobArgs{n,i});
@@ -337,10 +341,11 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
 
         while(!P.doneJobs());//busy wait
         //process best
-       
+
+        //有時候serial順序的解是由thread1得到,因此會先列入 : 因為t.bestcost < bestcost這個地方的關係! 
         for(auto t:P.threadArgs)
         {
-            if(t.bestcost<bestCost)
+            if(t.bestcost<bestCost )
             {
                 bestCost = t.bestcost;
                 bestplace = t.bestplace;
