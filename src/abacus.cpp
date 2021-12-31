@@ -4,6 +4,7 @@
 
 
 
+
 // user need to enter terminal with the increasing x order.
 // the block function check the relative position between termianl node and place-row , and make the  correction : split the subrows or boundary correction.
 void row::block(fixed_node &terminal){
@@ -191,18 +192,34 @@ int binarySearchRow(std::vector<row>&rows,node*n)
 }
 
 
+extern bool FIXEDORDER;//for mulitithreading
+bool chooseRow(int cost,subrow* bplace,int r,int*bestcost,subrow**bestplace,int*bestrow)
+{
+    if(FIXEDORDER)
+    {
+        if(cost<*bestcost || r > *bestrow){
+            *bestcost = cost;
+            *bestplace = bplace;
+            *bestrow = r;
+            return true;
+        }
+    }
+    else if(cost < *bestcost){
+        *bestcost = cost;
+        *bestplace = bplace;
+        *bestrow = r;
+        return true;
+    }
+    return false;
+
+}
+
 bool tryPlace2(std::vector<row>&rows,int i,node*n,int&bestCost,subrow*&bestPlace,int&bestRow)
 {
     row& r = rows.at(i);
     auto place = r.placeRow(n);
     if(place.first && place.second <= bestCost){
-
-        if(place.second<bestCost || i > bestRow){
-        bestCost = place.second;
-        bestPlace = place.first;
-        bestRow = i;
-        }
-        return true;
+        return chooseRow(place.second,place.first,i,&bestCost,&bestPlace,&bestRow);
     }
     else if(place.first)
     return false;
@@ -315,7 +332,11 @@ public:
 };
 
 
-int abacus(std::vector<node*>nodes,std::vector<row>&rows){
+
+extern int ROWRANGE;
+
+int abacus_Thread(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
+    FIXEDORDER = fixed_order;
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
         if(n1->origin_x==n2->origin_x)
@@ -324,13 +345,8 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         }
     );
 
-    int threadNum = 1; 
     threadPool P(threadNum,&rows);
 
-/*
-    std::cout<<rows.at(581).y<<"\n";
-    std::cout<<rows.at(582).y<<"\n";
-*/
     bool succ = true;
 
     int j = 0;
@@ -340,8 +356,7 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         subrow* bestplace = nullptr;
         int bestRow = -1;
         int startRow = binarySearchRow(rows,n);
-        int range = 100;
-
+        int range = ROWRANGE;
 
        for(int i = startRow-range;i<=startRow+range;i++){
            if(i>=0 && i<rows.size()){
@@ -350,22 +365,12 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         }
 
         while(!P.doneJobs());//busy wait
-        //process best
 
-        //有時候serial順序的解是由thread1得到,因此會先列入 : 因為t.bestcost < bestcost這個地方的關係! 
-        for(auto t:P.threadArgs)
-        {
+        //Get best
+        for(auto t:P.threadArgs){
             if(t.bestcost<=bestCost )
-            {
-                if(t.bestcost<bestCost || t.bestrow>bestRow){
-                bestCost = t.bestcost;
-                bestplace = t.bestplace;
-                bestRow = t.bestrow;
-                }
-            }
+                chooseRow(t.bestcost,t.bestplace,t.bestrow,&bestCost,&bestplace,&bestRow);
         }
-
-
 
         for(int i = startRow-range-1;i>=0;i--)
             if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
@@ -402,6 +407,62 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         std::cout<<"abacus failed\n";
         while(!P.doneJobs());//busy wait
         P.shutDown();
+        return -1;
+    }
+}
+
+
+
+
+//Serial Version
+int abacus(std::vector<node*>nodes,std::vector<row>&rows){
+    //sort by x
+    std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
+        if(n1->origin_x==n2->origin_x)
+                return n1->width < n2->width; 
+        return n1->origin_x < n2->origin_x;
+        }
+    );
+
+    bool succ = true;
+    for(auto n : nodes){
+        int bestCost = INT_MAX;
+        subrow* bestplace = nullptr;
+        int bestRow = -1;
+        int startRow = binarySearchRow(rows,n);
+        int range = ROWRANGE;
+        for(int i = startRow-range;i<=startRow+range;i++){
+            if(i>=0 && i<rows.size())
+                tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
+        }
+        for(int i = startRow-range-1;i>=0;i--)
+            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
+        for(int i = startRow+range+1;i<rows.size();i++)
+            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
+
+        if(bestplace){
+            bestplace->place(n);
+            bestplace->Backup();
+            bestplace->cost = bestplace->getPos();
+            bestplace->remainSpace-=n->width;
+            if(bestplace->remainSpace<0){ 
+                std::cerr<<"abacus remainspace<0!\n";
+                exit(1);
+            }
+        }
+        else{
+            succ = false;
+            break;
+        }
+    }
+    if(succ){
+        int cost = 0;
+        for(auto &r:rows)
+            cost+=r.getCost();
+        return cost;
+    }
+    else{
+        std::cout<<"abacus failed\n";
         return -1;
     }
 }

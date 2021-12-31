@@ -11,6 +11,9 @@ void output(std::vector<row>&rows,std::vector<fixed_node*>terminals,std::vector<
 void output2(std::vector<node*>&nodes,std::vector<fixed_node*>&terminals1,std::vector<fixed_node*>&terminals2);
 void parser(std::string auxName,std::vector<row>&rows,std::vector<fixed_node*>&terminals1,std::vector<fixed_node*>&terminals2,std::vector<node*>&nodes);
 
+int ROWRANGE = 18;//default
+bool FIXEDORDER = true;//set false to enhance flexibility. 
+int THREADNUM = 0;
 int main(int argc,char *argv[])
 {
 
@@ -28,8 +31,35 @@ int main(int argc,char *argv[])
 		for(auto &r:rows)
 			r.block(*t);
 	}
+
+
+	//Program setting
+	for(int i = 0;i<argc;i++)
+	{
+		if(std::string(argv[i])=="-r" && i+1 < argc){
+			ROWRANGE = std::stoi(argv[i+1]);
+		}
+		else if(std::string(argv[i])=="-nofixed")
+			FIXEDORDER = false;
+		else if(std::string(argv[i])=="-t"&& i+1 < argc)
+			THREADNUM = std::stoi(argv[i+1]);
+	}
+	std::cout<<"Program Setting :\n";
+	std::cout<<"ROWRANGE:"<<ROWRANGE<<"\nFIXEDORDER: "<< ( FIXEDORDER? "FIXED":"NOFIXED" )<<"\n";
+	std::cout<<"THREADNUM:";
+	if(THREADNUM)
+		std::cout<<THREADNUM<<"\n";
+	else 
+		std::cout<<"Serial\n";
 	std::cout<<"start do abacus\n";
-	int cost = abacus(nodes,rows);
+
+	//Run abacus
+	int cost;
+	if(!THREADNUM)
+		cost = abacus(nodes,rows);
+	else 
+		cost = abacus_Thread(nodes,rows,THREADNUM,FIXEDORDER);
+
 	if(cost!=-1)
 		std::cout<<"total cost:"<<cost<<"\n";
 	else
