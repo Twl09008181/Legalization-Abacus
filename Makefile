@@ -1,6 +1,6 @@
 
 CXX = g++
-CXXFLAGS = -std=c++11 -O3 -pthread
+CXXFLAGS = -std=c++11 -O3 -fopenmp
 
 Lab4 : main.cpp src/abacus.o
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ 
