@@ -427,13 +427,32 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows,const int threads){
     int thread_num = 0;
 #pragma omp parallel num_threads(threads)
     thread_num = omp_get_num_threads();
+    
+    int ave_cell = (int)nodes.size()/thread_num;
+    std::vector<int>row_recorder[rows.size()];
+    std::vector<std::pair<int,int>>tracks[thread_num];//cell_idx row
 
-    std::vector<node*>tracks[thread_num];
-    int row_num_in_track = rows.size()/thread_num;
+    //int row_num_in_track = rows.size()/thread_num;
     for(size_t i=0;i<nodes.size();++i){
         int r = binarySearchRow(rows,nodes[i]);
-        tracks[(r/row_num_in_track)%thread_num].push_back(nodes[i]);
+        row_recorder[r].push_back(i);
     }
+    int group = 0;
+    std::vector<int>position{0};
+    for(int i=0;i<rows.size();++i){
+        int cur_size = tracks[group].size();
+        int next_size = row_recorder[i].size();
+        if(group!=thread_num-1 && cur_size+next_size>ave_cell && cur_size+next_size-ave_cell>ave_cell-cur_size){
+            std::sort(tracks[group].begin(),tracks[group].end());
+            ++group;
+            position.push_back(i);
+        }
+        for(int j : row_recorder[i]){
+            tracks[group].push_back({j,i});
+        }
+    }
+    std::sort(tracks[group].begin(),tracks[group].end());
+    position.push_back(rows.size());
     /*
     for(int i=0;i<thread_num;++i){
         std::cout<<tracks[i].size()<<std::endl;
@@ -445,20 +464,21 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows,const int threads){
 #pragma omp parallel num_threads(thread_num)
 {
     int t_id = omp_get_thread_num();
-    std::vector<node*>& track = tracks[t_id];
-    for(auto n : track){
+    std::vector<std::pair<int,int>>& track = tracks[t_id];
+    for(size_t i=0;i<track.size();++i){
+        node *n = nodes.at(track.at(i).first);
         int bestCost = INT_MAX;
         subrow* bestplace = nullptr;
         int bestRow = -1;
-        int startRow = binarySearchRow(rows,n);
+        int startRow = track.at(i).second;
         int range = ROWRANGE;
-        for(int i = std::max(startRow-range,t_id*row_num_in_track);i<=std::min(startRow+range,(t_id+1)*row_num_in_track-1);i++){
+        for(int i = std::max(startRow-range,position[t_id]);i<=std::min(startRow+range,position[t_id+1]-1);i++){
             if(i>=0 && i<rows.size())
                 tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
         }
-        for(int i = startRow-range-1;i>=t_id*row_num_in_track;i--)
+        for(int i = startRow-range-1;i>=position[t_id];i--)
             if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
-        for(int i = startRow+range+1;i<(t_id+1)*row_num_in_track;i++)
+        for(int i = startRow+range+1;i<position[t_id+1];i++)
             if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
 
         if(bestplace){
