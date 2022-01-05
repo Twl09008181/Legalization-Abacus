@@ -5,6 +5,7 @@
 #include "header/abacus.hpp" 
 #include <fstream>
 #include <string>
+#include <time.h>
 
 void output(std::vector<row>&rows,std::vector<fixed_node*>terminals,std::vector<node*>&nodes);
 
@@ -53,6 +54,8 @@ int main(int argc,char *argv[])
 		std::cout<<"Serial\n";
 	std::cout<<"start do abacus\n";
 
+
+	time_t start = time(NULL);
 	//Run abacus
 	int cost;
 	if(!THREADNUM)
@@ -60,8 +63,11 @@ int main(int argc,char *argv[])
 	else 
 		cost = abacus_Thread(nodes,rows,THREADNUM,FIXEDORDER);
 
-	if(cost!=-1)
+	time_t end = time(NULL);
+	if(cost!=-1){
 		std::cout<<"total cost:"<<cost<<"\n";
+		std::cout<<"time:"<<difftime(end,start)<<"s\n";
+	}
 	else
 		std::cout<<"abacus failed\n";
 	
