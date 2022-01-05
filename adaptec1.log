@@ -1,0 +1,97 @@
+make: Warning: File 'Makefile' has modification time 26812 s in the future
+rm -f Lab4 src/abacus.o
+make: warning:  Clock skew detected.  Your build may be incomplete.
+make: Warning: File 'Makefile' has modification time 26812 s in the future
+g++ -std=c++11 -O3 -fopenmp   -c -o src/abacus.o src/abacus.cpp
+g++ -std=c++11 -O3 -fopenmp  -o Lab4 main.cpp src/abacus.o 
+make: warning:  Clock skew detected.  Your build may be incomplete.
+Thread number: 1   Row range: 10
+total cost:8266364
+
+real	0m12.147s
+user	0m12.060s
+sys	0m0.022s
+Thread number: 2   Row range: 10
+total cost:8298710
+
+real	0m5.978s
+user	0m10.209s
+sys	0m0.065s
+Thread number: 4   Row range: 10
+total cost:8332404
+
+real	0m2.580s
+user	0m7.717s
+sys	0m0.059s
+Thread number: 8   Row range: 10
+total cost:8511062
+
+real	0m1.667s
+user	0m6.261s
+sys	0m0.045s
+Thread number: 16   Row range: 10
+total cost:9061971
+
+real	0m0.783s
+user	0m4.991s
+sys	0m0.032s
+Thread number: 1   Row range: 20
+total cost:8064322
+
+real	0m23.588s
+user	0m23.472s
+sys	0m0.035s
+Thread number: 2   Row range: 20
+total cost:8098868
+
+real	0m12.092s
+user	0m19.764s
+sys	0m0.068s
+Thread number: 4   Row range: 20
+total cost:8129640
+
+real	0m4.772s
+user	0m14.821s
+sys	0m0.067s
+Thread number: 8   Row range: 20
+total cost:8320948
+
+real	0m3.002s
+user	0m11.456s
+sys	0m0.070s
+Thread number: 16   Row range: 20
+total cost:8834148
+
+real	0m1.385s
+user	0m7.792s
+sys	0m0.039s
+Thread number: 1   Row range: 30
+total cost:8029005
+
+real	0m33.851s
+user	0m33.704s
+sys	0m0.026s
+Thread number: 2   Row range: 30
+total cost:8067089
+
+real	0m18.017s
+user	0m29.289s
+sys	0m0.062s
+Thread number: 4   Row range: 30
+total cost:8096937
+
+real	0m7.407s
+user	0m21.741s
+sys	0m0.071s
+Thread number: 8   Row range: 30
+total cost:8268661
+
+real	0m4.450s
+user	0m15.922s
+sys	0m0.052s
+Thread number: 16   Row range: 30
+total cost:8784013
+
+real	0m1.283s
+user	0m9.367s
+sys	0m0.037s
