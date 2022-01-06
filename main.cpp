@@ -56,10 +56,9 @@ int main(int argc,char *argv[])
 	//Run abacus
 	int cost;
 	if(!THREADNUM)
-		cost = abacus(nodes,rows,1);
+		cost = abacus(nodes,rows);
 	else 
-		cost = abacus(nodes,rows,THREADNUM);
-		//cost = abacus_Thread(nodes,rows,THREADNUM,FIXEDORDER);
+		cost = abacus_Thread(nodes,rows,THREADNUM,FIXEDORDER);
 
 	if(cost!=-1)
 		std::cout<<"total cost:"<<cost<<"\n";

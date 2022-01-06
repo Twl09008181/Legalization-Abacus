@@ -336,6 +336,82 @@ public:
 
 extern int ROWRANGE;
 
+
+int abacus_omp_v2(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
+    //sort by x
+    std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
+        if(n1->origin_x==n2->origin_x)
+                return n1->width < n2->width; 
+        return n1->origin_x < n2->origin_x;
+        }
+    );
+    int thread_num = 0;
+#pragma omp parallel num_threads(threadNum)
+    thread_num = omp_get_num_threads();
+
+    std::vector<node*>tracks[thread_num];
+    int row_num_in_track = rows.size()/thread_num;
+    for(size_t i=0;i<nodes.size();++i){
+        int r = binarySearchRow(rows,nodes[i]);
+        tracks[(r/row_num_in_track)%thread_num].push_back(nodes[i]);
+    }
+    /*
+    for(int i=0;i<thread_num;++i){
+        std::cout<<tracks[i].size()<<std::endl;
+    }*/
+
+
+    bool succ = true;
+    
+#pragma omp parallel num_threads(thread_num)
+{
+    int t_id = omp_get_thread_num();
+    std::vector<node*>& track = tracks[t_id];
+    for(auto n : track){
+        int bestCost = INT_MAX;
+        subrow* bestplace = nullptr;
+        int bestRow = -1;
+        int startRow = binarySearchRow(rows,n);
+        int range = ROWRANGE;
+        for(int i = std::max(startRow-range,t_id*row_num_in_track);i<=std::min(startRow+range,(t_id+1)*row_num_in_track-1);i++){
+            if(i>=0 && i<rows.size())
+                tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
+        }
+        for(int i = startRow-range-1;i>=t_id*row_num_in_track;i--)
+            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
+        for(int i = startRow+range+1;i<(t_id+1)*row_num_in_track;i++)
+            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
+
+        if(bestplace){
+            bestplace->place(n);
+            bestplace->Backup();
+            bestplace->cost = bestplace->getPos();
+            bestplace->remainSpace-=n->width;
+            if(bestplace->remainSpace<0){ 
+                std::cerr<<"abacus remainspace<0!\n";
+                exit(1);
+            }
+        }
+        else{
+            succ = false;
+            break;
+        }
+    }
+
+}
+
+    if(succ){
+        int cost = 0;
+        for(auto &r:rows)
+            cost+=r.getCost();
+        return cost;
+    }
+    else{
+        std::cout<<"abacus failed\n";
+        return -1;
+    }
+}
+
 int abacus_Thread(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
     FIXEDORDER = fixed_order;
     //sort by x
@@ -416,7 +492,7 @@ int abacus_Thread(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bo
 
 
 //Serial Version
-int abacus(std::vector<node*>nodes,std::vector<row>&rows,const int threads){
+int abacus(std::vector<node*>nodes,std::vector<row>&rows){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
         if(n1->origin_x==n2->origin_x)
@@ -424,41 +500,21 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows,const int threads){
         return n1->origin_x < n2->origin_x;
         }
     );
-    int thread_num = 0;
-#pragma omp parallel num_threads(threads)
-    thread_num = omp_get_num_threads();
-
-    std::vector<node*>tracks[thread_num];
-    int row_num_in_track = rows.size()/thread_num;
-    for(size_t i=0;i<nodes.size();++i){
-        int r = binarySearchRow(rows,nodes[i]);
-        tracks[(r/row_num_in_track)%thread_num].push_back(nodes[i]);
-    }
-    /*
-    for(int i=0;i<thread_num;++i){
-        std::cout<<tracks[i].size()<<std::endl;
-    }*/
-
 
     bool succ = true;
-    
-#pragma omp parallel num_threads(thread_num)
-{
-    int t_id = omp_get_thread_num();
-    std::vector<node*>& track = tracks[t_id];
-    for(auto n : track){
+    for(auto n : nodes){
         int bestCost = INT_MAX;
         subrow* bestplace = nullptr;
         int bestRow = -1;
         int startRow = binarySearchRow(rows,n);
         int range = ROWRANGE;
-        for(int i = std::max(startRow-range,t_id*row_num_in_track);i<=std::min(startRow+range,(t_id+1)*row_num_in_track-1);i++){
+        for(int i = startRow-range;i<=startRow+range;i++){
             if(i>=0 && i<rows.size())
                 tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
         }
-        for(int i = startRow-range-1;i>=t_id*row_num_in_track;i--)
+        for(int i = startRow-range-1;i>=0;i--)
             if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
-        for(int i = startRow+range+1;i<(t_id+1)*row_num_in_track;i++)
+        for(int i = startRow+range+1;i<rows.size();i++)
             if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
 
         if(bestplace){
@@ -476,9 +532,6 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows,const int threads){
             break;
         }
     }
-
-}
-
     if(succ){
         int cost = 0;
         for(auto &r:rows)
