@@ -412,6 +412,11 @@ int abacus_omp_v1(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bo
     }
 }
 
+int abacus_omp_v1(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
+
+
+}
+
 int abacus_Thread(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
     FIXEDORDER = fixed_order;
     //sort by x
