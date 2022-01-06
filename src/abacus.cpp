@@ -337,7 +337,7 @@ public:
 extern int ROWRANGE;
 
 
-int abacus_omp_v2(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
+int abacus_omp_v1(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
         if(n1->origin_x==n2->origin_x)
