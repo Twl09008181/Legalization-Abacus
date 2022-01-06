@@ -337,86 +337,6 @@ public:
 extern int ROWRANGE;
 
 int abacus_Thread(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
-    FIXEDORDER = fixed_order;
-    //sort by x
-    std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
-        if(n1->origin_x==n2->origin_x)
-                return n1->width < n2->width; 
-        return n1->origin_x < n2->origin_x;
-        }
-    );
-
-    threadPool P(threadNum,&rows);
-
-    bool succ = true;
-
-    int j = 0;
-    for(auto n : nodes){
-        P.reset();
-        int bestCost = INT_MAX;
-        subrow* bestplace = nullptr;
-        int bestRow = -1;
-        int startRow = binarySearchRow(rows,n);
-        int range = ROWRANGE;
-
-       for(int i = startRow-range;i<=startRow+range;i++){
-           if(i>=0 && i<rows.size()){
-               P.newJob(jobArgs{n,i});
-           }
-        }
-
-        while(!P.doneJobs());//busy wait
-
-        //Get best
-        for(auto t:P.threadArgs){
-            if(t.bestcost<=bestCost )
-                chooseRow(t.bestcost,t.bestplace,t.bestrow,&bestCost,&bestplace,&bestRow);
-        }
-
-        for(int i = startRow-range-1;i>=0;i--)
-            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
-        for(int i = startRow+range+1;i<rows.size();i++)
-            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
-
-        if(bestplace){
-            bestplace->place(n);
-            bestplace->Backup();
-            bestplace->cost = bestplace->getPos();
-            bestplace->remainSpace-=n->width;
-            if(bestplace->remainSpace<0){ 
-                std::cout<<n->name<<"\n";
-                std::cerr<<"abacus remainspace<0!\n";
-                exit(1);
-            }
-        }
-        else{
-            succ = false;
-            break;
-        }
-    }
-
-    std::cout<<"done\n";
-    if(succ){
-        int cost = 0;
-        for(auto &r:rows)
-            cost+=r.getCost();
-        while(!P.doneJobs());//busy wait
-        P.shutDown();
-        return cost;
-    }
-    else{
-        std::cout<<"abacus failed\n";
-        while(!P.doneJobs());//busy wait
-        P.shutDown();
-        return -1;
-    }
-}
-
-
-
-
-//Serial Version
-int abacus(std::vector<node*>nodes,std::vector<row>&rows,const int threads){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
         if(n1->origin_x==n2->origin_x)
@@ -425,7 +345,7 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows,const int threads){
         }
     );
     int thread_num = 0;
-#pragma omp parallel num_threads(threads)
+#pragma omp parallel num_threads(threadNum)
     thread_num = omp_get_num_threads();
     
     int ave_cell = (int)nodes.size()/thread_num;
@@ -496,9 +416,64 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows,const int threads){
             break;
         }
     }
-
 }
 
+    if(succ){
+        int cost = 0;
+        for(auto &r:rows)
+            cost+=r.getCost();
+        return cost;
+    }
+    else{
+        std::cout<<"abacus failed\n";
+        return -1;
+    }
+}
+
+
+
+
+//Serial Version
+int abacus(std::vector<node*>nodes,std::vector<row>&rows){
+//sort by x
+    std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
+        if(n1->origin_x==n2->origin_x)
+                return n1->width < n2->width; 
+        return n1->origin_x < n2->origin_x;
+        }
+    );
+
+    bool succ = true;
+    for(auto n : nodes){
+        int bestCost = INT_MAX;
+        subrow* bestplace = nullptr;
+        int bestRow = -1;
+        int startRow = binarySearchRow(rows,n);
+        int range = ROWRANGE;
+        for(int i = startRow-range;i<=startRow+range;i++){
+            if(i>=0 && i<rows.size())
+                tryPlace2(rows,i,n,bestCost,bestplace,bestRow);
+        }
+        for(int i = startRow-range-1;i>=0;i--)
+            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
+        for(int i = startRow+range+1;i<rows.size();i++)
+            if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))break;
+
+        if(bestplace){
+            bestplace->place(n);
+            bestplace->Backup();
+            bestplace->cost = bestplace->getPos();
+            bestplace->remainSpace-=n->width;
+            if(bestplace->remainSpace<0){ 
+                std::cerr<<"abacus remainspace<0!\n";
+                exit(1);
+            }
+        }
+        else{
+            succ = false;
+            break;
+        }
+    }
     if(succ){
         int cost = 0;
         for(auto &r:rows)
