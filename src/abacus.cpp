@@ -638,3 +638,82 @@ int abacus(std::vector<node*>nodes,std::vector<row>&rows){
         return -1;
     }
 }
+
+int abacus_omp_v0(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
+	int& THREADNUM = threadNum;
+	omp_set_num_threads(threadNum);
+    //sort by x
+    std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
+        if(n1->origin_x==n2->origin_x)
+                return n1->width < n2->width; 
+        return n1->origin_x < n2->origin_x;
+        }
+    );
+
+    bool succ = true;
+    for(int i=0; i<nodes.size(); i++){
+        auto n = nodes[i];
+		int bestCost = INT_MAX;
+        subrow* bestplace = nullptr;
+        int bestRow = -1;
+        int startRow = binarySearchRow(rows,n);
+        int range = ROWRANGE;
+      
+		std::vector<int> thread_bestCost(THREADNUM, INT_MAX);
+		std::vector<subrow*> thread_bestplace(THREADNUM, nullptr);
+		std::vector<int> thread_bestRow(THREADNUM, -1);
+
+		#pragma omp parallel for schedule(dynamic)
+		for(int i = startRow-range;i<=startRow+range;i++){
+            if(!(i>=0 && i<rows.size())) continue;
+			int t = omp_get_thread_num();
+			tryPlace2(rows,i,n, thread_bestCost[t], thread_bestplace[t], thread_bestRow[t]);	
+			//tryPlace2(rows,i,n, bestCost, bestplace, bestRow);	
+		}
+				
+		int dist = std::distance(thread_bestCost.begin(), std::min_element(thread_bestCost.begin(), thread_bestCost.end()));
+		for(int dist=0; dist<THREADNUM; dist++){
+        	if(thread_bestCost[dist] < bestCost ||
+					(fixed_order && thread_bestCost[dist] == bestCost && thread_bestRow[dist] > bestRow)){
+				bestCost = thread_bestCost[dist];
+				bestplace = thread_bestplace[dist];
+				bestRow = thread_bestRow[dist];
+			}
+		}
+
+        for(int i = startRow-range-1;i>=0;i--){
+			int flag = false;
+			if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))flag = true;
+			if(flag) break;	
+		}
+        for(int i = startRow+range+1;i<rows.size();i++){
+			int flag = false;
+			if(!tryPlace2(rows,i,n,bestCost,bestplace,bestRow))flag = true;
+			if(flag) break;
+		}
+
+        if(bestplace){
+            bestplace->place(n);
+            bestplace->Backup();
+            bestplace->cost = bestplace->getPos();
+            bestplace->remainSpace-=n->width;
+            if(bestplace->remainSpace<0){ 
+                std::cerr<<"abacus remainspace<0!\n";
+                exit(1);
+            }
+        }else{
+            succ = false;
+			break;
+        }
+    }
+    if(succ){
+        int cost = 0;
+        for(auto &r:rows)
+            cost+=r.getCost();
+        return cost;
+    }
+    else{
+        std::cout<<"abacus failed\n";
+        return -1;
+    }
+}
