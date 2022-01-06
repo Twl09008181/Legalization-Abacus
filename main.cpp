@@ -32,7 +32,7 @@ int main(int argc,char *argv[])
 			r.block(*t);
 	}
 
-
+	int omp = -1;
 	//Program setting
 	for(int i = 0;i<argc;i++)
 	{
@@ -43,6 +43,8 @@ int main(int argc,char *argv[])
 			FIXEDORDER = false;
 		else if(std::string(argv[i])=="-t"&& i+1 < argc)
 			THREADNUM = std::stoi(argv[i+1]);
+		else if(std::string(argv[i])=="-omp")
+			omp = (i+1)<argc ? std::stoi(argv[i+1]) : 0;
 	}
 	std::cout<<"Program Setting :\n";
 	std::cout<<"ROWRANGE:"<<ROWRANGE<<"\nFIXEDORDER: "<< ( FIXEDORDER? "FIXED":"NOFIXED" )<<"\n";
@@ -53,12 +55,22 @@ int main(int argc,char *argv[])
 		std::cout<<"Serial\n";
 	std::cout<<"start do abacus\n";
 
+	if(omp!=-1){
+		std::cout<<"Omp Version"<<omp<<"\n";
+	}
+
 	//Run abacus
 	int cost;
 	if(!THREADNUM)
 		cost = abacus(nodes,rows);
-	else 
+	else if(omp==-1)
 		cost = abacus_Thread(nodes,rows,THREADNUM,FIXEDORDER);
+	else if(omp==0)
+		cost = abacus_omp_v0(nodes,rows,THREADNUM,FIXEDORDER);
+	else if(omp==1)
+		cost = abacus_omp_v1(nodes,rows,THREADNUM,FIXEDORDER);
+	else if(omp==2)
+		cost = abacus_omp_v2(nodes,rows,THREADNUM,FIXEDORDER);
 
 	if(cost!=-1)
 		std::cout<<"total cost:"<<cost<<"\n";
