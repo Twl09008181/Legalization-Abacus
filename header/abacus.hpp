@@ -132,5 +132,6 @@ struct row{
 void placeTerminal(std::vector<fixed_node>&terminals,std::vector<row>&rows);
 int abacus(std::vector<node*>nodes,std::vector<row>&rows);
 int abacus_Thread(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order = false);
+int abacus_omp_v2(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order = false);
 
 #endif

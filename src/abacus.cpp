@@ -336,7 +336,7 @@ public:
 
 extern int ROWRANGE;
 
-int abacus_Thread(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
+int abacus_omp_v2(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bool fixed_order){
     //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
         if(n1->origin_x==n2->origin_x)
@@ -435,7 +435,7 @@ int abacus_Thread(std::vector<node*>nodes,std::vector<row>&rows,int threadNum,bo
 
 //Serial Version
 int abacus(std::vector<node*>nodes,std::vector<row>&rows){
-//sort by x
+    //sort by x
     std::sort(nodes.begin(),nodes.end(),[](node*n1,node*n2){
         if(n1->origin_x==n2->origin_x)
                 return n1->width < n2->width; 
